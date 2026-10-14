@@ -1,0 +1,11 @@
+quarantine/
+incidents/
+__pycache__/
+*.log
+*.quarantine
+test_sandbox/
+*.out
+decoy_manifest.json
+test_sandbox/
+*.out
+decoy_manifest.json

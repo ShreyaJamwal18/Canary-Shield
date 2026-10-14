@@ -1,0 +1,20 @@
+{
+  "mode": "test",
+  "description": "Canary Shield Enterprise Configuration. Mode can be 'production' or 'test'.",
+  "production_watch_directories": [
+    "~/Documents",
+    "~/Desktop",
+    "~/Downloads"
+  ],
+  "canary_count_per_directory": 10,
+  "auto_restore_canaries": true,
+  "instant_thread_freeze": true,
+  "terminate_process_tree": true,
+  "quarantine_malware": true,
+  "desktop_alerts": true,
+  "vss_protection_enabled": false,
+  "log_file": "canary_shield.log",
+  "quarantine_dir": "quarantine",
+  "incidents_dir": "incidents",
+  "lookup_window_seconds": 0.35
+}

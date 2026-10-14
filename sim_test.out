@@ -1,0 +1,28 @@
+======================================================================
+      CANARY SHIELD — BENIGN RANSOMWARE SIMULATOR (TEST HARNESS)
+======================================================================
+[Simulator Target] TARGET SANDBOX PATH: C:\Users\91700\Documents\MDC\test_sandbox
+[Simulator] Seeded 5 mock user files into sandbox for realistic testing.
+[Simulator] Process ID (PID): 19212
+[Simulator] Traversal delay: 0.08s | Handle hold time: 0.4s
+
+[Simulator] Found 15 files to attack in sandbox.
+[Simulator] Commencing simulated ransomware traversal (read -> overwrite -> rename)...
+
+[Simulator PID 19212] Encrypting: !_confidential_database_root_keys.pdf...
+   [Holding open handle for 0.4s to test direct match...]
+   -> Successfully locked: !_confidential_database_root_keys.pdf.locked
+[Simulator PID 19212] Encrypting: !_confidential_employee_payroll_records.pdf...
+   [Holding open handle for 0.4s to test direct match...]
+   -> Successfully locked: !_confidential_employee_payroll_records.pdf.locked
+[Simulator PID 19212] Encrypting: !_confidential_merger_acquisition_brief.pdf...
+   [Holding open handle for 0.4s to test direct match...]
+   -> Successfully locked: !_confidential_merger_acquisition_brief.pdf.locked
+[Simulator PID 19212] Encrypting: !_passwords_database_root_keys.txt...
+   [Holding open handle for 0.4s to test direct match...]
+   -> Successfully locked: !_passwords_database_root_keys.txt.locked
+[Simulator PID 19212] Encrypting: !_passwords_database_root_keys.xlsx...
+   [Holding open handle for 0.4s to test direct match...]
+   -> Successfully locked: !_passwords_database_root_keys.xlsx.locked
+[Simulator PID 19212] Encrypting: 00_audit_corporate_strategy_2026.xlsx...
+   [Holding open handle for 0.4s to test direct match...]
