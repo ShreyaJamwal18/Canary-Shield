@@ -19,6 +19,7 @@ Enforces Hard Rule 2 (production allowlist enforcement) and Hard Rule 3 (fail-sa
 """
 
 import os
+import time
 import logging
 import threading
 from typing import Optional, List
@@ -96,6 +97,9 @@ def kill_process(
     method: str = "direct_handle",
     target_path: Optional[str] = None,
     latency_ms: Optional[float] = None,
+    t_event_received: Optional[float] = None,
+    t_attr_start: Optional[float] = None,
+    t_attr_end: Optional[float] = None,
 ) -> bool:
     """
     Terminate the offending process with the given PID using enterprise containment.
@@ -146,12 +150,16 @@ def kill_process(
 
     # Step 1: Real-World Process Suspension (Thread Freeze)
     # Freezes all running threads instantly to prevent further file encryption syscalls
+    t_freeze_done = None
     if INSTANT_THREAD_FREEZE:
         try:
             proc.suspend()
+            t_freeze_done = time.time()
             logger.info("CONTAINMENT FREEZE: Suspended threads of PID %d (%s).", pid, proc_name)
         except Exception as exc:
             logger.debug("Could not suspend PID %d: %s", pid, exc)
+    if t_freeze_done is None:
+        t_freeze_done = time.time()
 
     # Step 2: Enumerate Process Tree (Children)
     children: List[psutil.Process] = []
@@ -229,37 +237,53 @@ def kill_process(
                 terminated = True
 
         if terminated:
+            t_kill_done = time.time()
+            t_evt = t_event_received if t_event_received is not None else (t_attr_start or t_freeze_done)
+            t_as = t_attr_start or t_evt
+            t_ae = t_attr_end or t_as
+            total_contain_ms = (t_kill_done - t_evt) * 1000.0
+
+            logger.info(
+                "TIMING_BREAKDOWN: event_received=%.4f | attr_start=%.4f | attr_end=%.4f | freeze_done=%.4f | kill_done=%.4f | total_contain_ms=%.2f",
+                t_evt, t_as, t_ae, t_freeze_done, t_kill_done, total_contain_ms
+            )
+            print(
+                f"[TIMING BREAKDOWN] Event: {t_evt:.4f} | Attr Start: {t_as:.4f} | Attr End: {t_ae:.4f} | "
+                f"Freeze Done: {t_freeze_done:.4f} | Kill Done: {t_kill_done:.4f} | Total Containment: {total_contain_ms:.2f} ms"
+            )
             logger.critical("CONTAINMENT SUCCESS: Successfully terminated PID %d (%s).", pid, proc_name)
 
-            # Step 5: Malware Quarantine & Forensic Incident Generation (Synchronous & Atomic)
-            try:
-                record_incident(
-                    pid=pid,
-                    proc_name=proc_name,
-                    confidence=confidence,
-                    method=method,
-                    latency_ms=latency_ms or 0.0,
-                    target_path=target_path or "Unknown",
-                    proc_exe=proc_exe,
-                    cmdline=proc_cmdline,
-                    username=proc_user,
-                    process_tree_pids=tree_pids,
-                )
-            except Exception as exc:
-                logger.error("Could not record incident telemetry: %s", exc)
+            # Step 5 & 6: Async Background Forensics, Quarantine & Alert Dispatch
+            # Runs asynchronously after kill confirmation so it does not delay the watchdog thread
+            def _async_post_containment():
+                try:
+                    record_incident(
+                        pid=pid,
+                        proc_name=proc_name,
+                        confidence=confidence,
+                        method=method,
+                        latency_ms=latency_ms or 0.0,
+                        target_path=target_path or "Unknown",
+                        proc_exe=proc_exe,
+                        cmdline=proc_cmdline,
+                        username=proc_user,
+                        process_tree_pids=tree_pids,
+                    )
+                except Exception as exc:
+                    logger.error("Could not record incident telemetry: %s", exc)
 
-            # Step 6: Dispatch Real-Time Desktop Alert (Internally non-blocking)
-            try:
-                send_threat_alert(
-                    pid=pid,
-                    proc_name=proc_name,
-                    latency_ms=latency_ms or 0.0,
-                    confidence=confidence,
-                    method=method,
-                )
-            except Exception as exc:
-                logger.debug("Desktop alert dispatch failed: %s", exc)
+                try:
+                    send_threat_alert(
+                        pid=pid,
+                        proc_name=proc_name,
+                        latency_ms=latency_ms or 0.0,
+                        confidence=confidence,
+                        method=method,
+                    )
+                except Exception as exc:
+                    logger.debug("Desktop alert dispatch failed: %s", exc)
 
+            threading.Thread(target=_async_post_containment, name="AsyncPostContainment", daemon=True).start()
             return True
         else:
             logger.error("Containment timeout: PID %d (%s) still alive after termination attempt.", pid, proc_name)

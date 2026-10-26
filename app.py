@@ -944,14 +944,24 @@ class CanaryShieldApp(ctk.CTk):
                 )
                 self.sim_proc = proc
                 for line in proc.stdout:
-                    self.after(0, lambda l=line: self._append_sim_output(l))
+                    try:
+                        self.after(0, lambda l=line: self._append_sim_output(l))
+                    except Exception:
+                        break
 
                 proc.wait()
                 exit_code = proc.returncode
-                self.after(0, lambda: self._on_sim_finished(exit_code))
+                try:
+                    self.after(0, lambda: self._on_sim_finished(exit_code))
+                except Exception:
+                    pass
             except Exception as exc:
-                self.after(0, lambda: self._append_sim_output(f"\n[Simulator Error] {exc}\n"))
-                self.after(0, lambda: self._on_sim_finished(1))
+                try:
+                    self.after(0, lambda: self._append_sim_output(f"\n[Simulator Error] {exc}\n"))
+    
+                except Exception:
+                    pass
+
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -1197,6 +1207,11 @@ class CanaryShieldApp(ctk.CTk):
                     self.observer.stop()
                     self.observer.join(timeout=3.0)
                     self.observer = None
+                try:
+                    from process_id import stop_process_cache
+                    stop_process_cache()
+                except Exception:
+                    pass
 
                 self.is_armed = False
                 self.after(0, self._on_shield_disarmed)
@@ -1327,7 +1342,7 @@ class CanaryShieldApp(ctk.CTk):
                     pass
                 self.vss_guard = None
 
-            # 3. Stop watchdog observer
+            # 3. Stop watchdog observer & incremental process cache
             if hasattr(self, "observer") and self.observer is not None:
                 try:
                     self.observer.stop()
@@ -1335,6 +1350,12 @@ class CanaryShieldApp(ctk.CTk):
                 except Exception:
                     pass
                 self.observer = None
+
+            try:
+                from process_id import stop_process_cache
+                stop_process_cache()
+            except Exception:
+                pass
 
             # 4. Stop self-healing thread if tracked
             if hasattr(self, "self_healing_thread") and self.self_healing_thread is not None:

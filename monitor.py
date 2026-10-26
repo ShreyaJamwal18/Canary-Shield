@@ -26,7 +26,7 @@ from config import (
     print_target_path,
     AUTO_RESTORE_CANARIES,
 )
-from process_id import find_offending_pid, get_last_attribution_record
+from process_id import find_offending_pid, get_last_attribution_record, start_process_cache, stop_process_cache
 from contain import kill_process
 from decoy import restore_canary
 from vss_guard import VSSGuard
@@ -79,7 +79,8 @@ class CanaryEventHandler(FileSystemEventHandler):
         if self._should_debounce(norm_path):
             return
 
-        detected_at = time.time()
+        t_event_received = time.time()
+        detected_at = t_event_received
         logger.critical(
             "*** CANARY TRIPWIRE TRIGGERED *** Event=%s | Path=%s",
             event_type, norm_path
@@ -87,7 +88,9 @@ class CanaryEventHandler(FileSystemEventHandler):
         print(f"\n[ALERT] CANARY TRIGGERED: {event_type} on {norm_path}")
 
         # Step 1: Attribute the offending process PID
+        t_attr_start = time.time()
         offending_pid = find_offending_pid(norm_path)
+        t_attr_end = time.time()
 
         record = get_last_attribution_record() or {}
         confidence = record.get("confidence", "NONE")
@@ -114,6 +117,9 @@ class CanaryEventHandler(FileSystemEventHandler):
             method=method,
             target_path=norm_path,
             latency_ms=latency,
+            t_event_received=t_event_received,
+            t_attr_start=t_attr_start,
+            t_attr_end=t_attr_end,
         )
 
         if terminated:
@@ -183,6 +189,9 @@ def start_monitoring(
     observer.start()
     logger.info("Canary Shield Monitor is running. %d canaries active.", len(canary_paths))
 
+    # Start incremental process cache (Phase 2 optimization)
+    start_process_cache()
+
     # Start concurrent VSS anti-recovery guard
     vss_guard = VSSGuard(check_interval=0.5)
     vss_guard.start()
@@ -195,7 +204,9 @@ def start_monitoring(
             logger.info("Stopping Canary Shield Monitor (Ctrl+C received)...")
             vss_guard.stop()
             observer.stop()
+            stop_process_cache()
         observer.join()
+        stop_process_cache()
         logger.info("Canary Shield Monitor stopped.")
 
     return observer, vss_guard
