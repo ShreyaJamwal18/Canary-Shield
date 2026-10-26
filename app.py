@@ -19,11 +19,29 @@ import logging
 import threading
 import subprocess
 import webbrowser
+import ctypes
 from typing import Optional, List, Dict, Any
 from tkinter import messagebox
 
 import customtkinter as ctk
+from PIL import Image
 import psutil
+
+# Resource path helper supporting dev mode and PyInstaller bundles (sys._MEIPASS)
+def resource_path(relative_path: str) -> str:
+    """Get absolute path to resource, works for dev and for PyInstaller bundle."""
+    try:
+        base_path = sys._MEIPASS
+    except AttributeError:
+        base_path = os.path.dirname(os.path.abspath(__file__))
+    return os.path.join(base_path, relative_path)
+
+# Set explicit Windows AppUserModelID so taskbar displays the custom application icon
+try:
+    myappid = "canaryshield.edr.desktop.1.0"
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
 
 from config import (
     BASE_DIR,
@@ -86,6 +104,14 @@ class CanaryShieldApp(ctk.CTk):
         self.minsize(980, 640)
         self.configure(fg_color=COLOR_BG)
 
+        # Application & Taskbar Icon
+        ico_file = resource_path(os.path.join("assets", "canary_shield.ico"))
+        if os.path.exists(ico_file):
+            try:
+                self.iconbitmap(ico_file)
+            except Exception:
+                pass
+
         # Threading & Engine State
         self.log_queue = queue.Queue()
         self.is_armed = False
@@ -129,13 +155,38 @@ class CanaryShieldApp(ctk.CTk):
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
         self.sidebar_frame.grid_rowconfigure(8, weight=1)
 
-        # Sidebar Header / Brand
-        brand_label = ctk.CTkLabel(
-            self.sidebar_frame,
-            text="🛡️ CANARY SHIELD",
-            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
-            text_color=COLOR_ACCENT,
-        )
+        # Sidebar Header / Brand with PNG logo
+        png_file = resource_path(os.path.join("assets", "canary_shield.png"))
+        if os.path.exists(png_file):
+            try:
+                logo_pil = Image.open(png_file)
+                self.sidebar_logo_img = ctk.CTkImage(
+                    light_image=logo_pil,
+                    dark_image=logo_pil,
+                    size=(26, 26)
+                )
+                brand_label = ctk.CTkLabel(
+                    self.sidebar_frame,
+                    text=" CANARY SHIELD",
+                    image=self.sidebar_logo_img,
+                    compound="left",
+                    font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                    text_color=COLOR_ACCENT,
+                )
+            except Exception:
+                brand_label = ctk.CTkLabel(
+                    self.sidebar_frame,
+                    text="CANARY SHIELD",
+                    font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                    text_color=COLOR_ACCENT,
+                )
+        else:
+            brand_label = ctk.CTkLabel(
+                self.sidebar_frame,
+                text="CANARY SHIELD",
+                font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                text_color=COLOR_ACCENT,
+            )
         brand_label.grid(row=0, column=0, padx=20, pady=(24, 2), sticky="w")
 
         subtitle_label = ctk.CTkLabel(
@@ -864,12 +915,20 @@ class CanaryShieldApp(ctk.CTk):
         hold_handle = self.sim_handle_entry.get().strip() or "0.4"
 
         def _run():
-            cmd = [
-                sys.executable,
-                os.path.join(BASE_DIR, "simulate_attack.py"),
-                "--delay", delay,
-                "--hold-handle", hold_handle,
-            ]
+            if getattr(sys, "frozen", False):
+                cmd = [
+                    sys.executable,
+                    "--run-simulator",
+                    "--delay", delay,
+                    "--hold-handle", hold_handle,
+                ]
+            else:
+                cmd = [
+                    sys.executable,
+                    os.path.join(BASE_DIR, "simulate_attack.py"),
+                    "--delay", delay,
+                    "--hold-handle", hold_handle,
+                ]
             env = os.environ.copy()
             env["CANARY_TEST_MODE"] = "1"
             env["PYTHONUNBUFFERED"] = "1"
@@ -1291,8 +1350,61 @@ class CanaryShieldApp(ctk.CTk):
             self.destroy()
 
 
+def is_admin() -> bool:
+    """Check if the current process has administrative privileges."""
+    try:
+        return ctypes.windll.shell32.IsUserAnAdmin() != 0
+    except Exception:
+        return False
+
+
+def request_admin_elevation() -> bool:
+    """
+    Relaunch current script or executable with elevated Administrator privileges via UAC prompt.
+    Returns True if already running as Administrator.
+    If elevation requested and user approved, exits the unelevated process.
+    """
+    if is_admin():
+        return True
+
+    if sys.platform != "win32":
+        return True
+
+    if getattr(sys, "frozen", False):
+        executable = sys.executable
+        params = " ".join([f'"{arg}"' for arg in sys.argv[1:]])
+    else:
+        executable = sys.executable
+        params = " ".join([f'"{arg}"' for arg in sys.argv])
+
+    try:
+        ret = ctypes.windll.shell32.ShellExecuteW(
+            None,
+            "runas",
+            executable,
+            params,
+            os.getcwd(),
+            1  # SW_SHOWNORMAL
+        )
+        # ShellExecute returns > 32 on success (HINSTANCE)
+        if int(ret) > 32:
+            sys.exit(0)
+    except Exception as exc:
+        logging.getLogger("canary_shield.app").warning("Elevation request failed: %s", exc)
+
+    return False
+
+
 def main():
-    """Launch the Canary Shield Desktop EDR Application."""
+    """Launch the Canary Shield Desktop Application or hidden subcommands."""
+    if "--run-simulator" in sys.argv:
+        # Hidden command-line mode for frozen executable or subprocess invocation
+        sim_args = [a for a in sys.argv[1:] if a != "--run-simulator"]
+        import simulate_attack
+        simulate_attack.main(sim_args)
+        sys.exit(0)
+
+    request_admin_elevation()
     app = CanaryShieldApp()
     app.mainloop()
 

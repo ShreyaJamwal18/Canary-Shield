@@ -3,7 +3,7 @@ Canary Shield — Enterprise Containment Module.
 
 Safely and aggressively neutralizes identified ransomware processes via psutil.
 Equipped with real-world enterprise containment capabilities:
-1. Microsecond Process Suspension (proc.suspend()): Immediately arrests all worker
+1. Process Suspension (proc.suspend()): Immediately arrests all worker
    threads in the target process before further encryption I/O can be queued.
 2. Full Process Tree Neutralization (proc.children(recursive=True)): Terminates all
    helper scripts, worker processes, and child encryptors spawned by the parent.
@@ -38,6 +38,18 @@ from notify import send_threat_alert
 logger = logging.getLogger("canary_shield.contain")
 
 
+def get_protected_pids() -> set[int]:
+    """Return self PID and all ancestor PIDs to prevent self/parent termination or suspension."""
+    protected = {os.getpid()}
+    try:
+        curr = psutil.Process()
+        for parent in curr.parents():
+            protected.add(parent.pid)
+    except Exception:
+        pass
+    return protected
+
+
 def is_safe_to_kill(pid: int, proc_name: str) -> tuple[bool, str]:
     """
     Evaluate if a process is safe to terminate according to safety rules and allowlists.
@@ -45,10 +57,17 @@ def is_safe_to_kill(pid: int, proc_name: str) -> tuple[bool, str]:
     """
     clean_name = proc_name.lower().strip()
     active_allowlist = {name.lower().strip() for name in get_active_allowlist()}
+    protected_pids = get_protected_pids()
 
-    # Check 1: Prohibit killing self (Canary Shield process)
-    if pid == os.getpid():
-        return False, "Target PID matches Canary Shield process (self)"
+    # Check 1: Prohibit killing self (Canary Shield process) or any of its ancestors
+    if pid in protected_pids:
+        logger.warning(
+            "Protected PID matched for termination/suspension: PID %d (%s) is in self/ancestor chain %s — containment blocked.",
+            pid, clean_name, protected_pids
+        )
+        if pid == os.getpid():
+            return False, "Target PID matches Canary Shield process (self)"
+        return False, f"Target PID {pid} is an ancestor of Canary Shield process"
 
     # Check 2: Prohibit killing OS Kernel / System Idle / Core Windows init
     if pid <= 4:
@@ -125,12 +144,12 @@ def kill_process(
         logger.error("CONTAINMENT REFUSED: %s. Action blocked.", reason)
         return False
 
-    # Step 1: Real-World Microsecond Process Suspension (Thread Freeze)
+    # Step 1: Real-World Process Suspension (Thread Freeze)
     # Freezes all running threads instantly to prevent further file encryption syscalls
     if INSTANT_THREAD_FREEZE:
         try:
             proc.suspend()
-            logger.info("CONTAINMENT FREEZE: Suspended threads of PID %d (%s) in microseconds.", pid, proc_name)
+            logger.info("CONTAINMENT FREEZE: Suspended threads of PID %d (%s).", pid, proc_name)
         except Exception as exc:
             logger.debug("Could not suspend PID %d: %s", pid, exc)
 
@@ -142,6 +161,12 @@ def kill_process(
             children = proc.children(recursive=True)
             for ch in children:
                 try:
+                    if ch.pid in protected_pids:
+                        logger.warning(
+                            "Protected PID %d matched in child process tree — excluded from containment.",
+                            ch.pid
+                        )
+                        continue
                     tree_pids.append(ch.pid)
                     if INSTANT_THREAD_FREEZE:
                         ch.suspend()
@@ -182,6 +207,9 @@ def kill_process(
 
         # Terminate all child worker processes first
         for ch in children:
+            if ch.pid in protected_pids:
+                logger.warning("Protected PID %d matched in child termination list — excluded.", ch.pid)
+                continue
             try:
                 ch.kill()
             except Exception:

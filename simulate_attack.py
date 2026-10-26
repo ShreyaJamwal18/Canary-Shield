@@ -143,7 +143,7 @@ def run_simulation(
     print("[Simulator] Note: If Canary Shield was active, this process should have been killed early.")
 
 
-if __name__ == "__main__":
+def main(argv=None):
     parser = argparse.ArgumentParser(description="Canary Shield Benign Attack Simulator")
     parser.add_argument(
         "--target",
@@ -168,10 +168,15 @@ if __name__ == "__main__":
         help="Do not seed mock user files into the sandbox"
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     run_simulation(
         target_dir=args.target,
         delay=args.delay,
         hold_handle=args.hold_handle,
         seed_users=not args.no_seed,
     )
+
+
+if __name__ == "__main__":
+    main()
+

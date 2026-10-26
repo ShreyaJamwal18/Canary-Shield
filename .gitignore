@@ -9,3 +9,7 @@ decoy_manifest.json
 test_sandbox/
 *.out
 decoy_manifest.json
+dist_exe/
+build_exe/
+build/
+dist/

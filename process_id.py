@@ -37,6 +37,18 @@ def _normalize_path(path: str) -> str:
     return os.path.normcase(os.path.normpath(os.path.abspath(path)))
 
 
+def get_protected_pids() -> set[int]:
+    """Return self PID and all ancestor PIDs to prevent self/parent attribution."""
+    protected = {os.getpid()}
+    try:
+        curr = psutil.Process()
+        for parent in curr.parents():
+            protected.add(parent.pid)
+    except Exception:
+        pass
+    return protected
+
+
 def find_offending_pid(
     triggered_path: str,
     allowlist: Optional[frozenset[str]] = None
@@ -64,7 +76,7 @@ def find_offending_pid(
     effective_allowlist = allowlist if allowlist is not None else get_active_allowlist()
     normalized_allowlist = frozenset(name.lower() for name in effective_allowlist)
 
-    my_pid = os.getpid()
+    protected_pids = get_protected_pids()
 
     # Track directory candidates across polling cycles: {pid: candidate_info}
     directory_candidates: Dict[int, Dict[str, Any]] = {}
@@ -76,7 +88,7 @@ def find_offending_pid(
         for p in psutil.process_iter(["pid", "name", "create_time"]):
             try:
                 pid = p.pid
-                if pid <= 4 or pid == my_pid:
+                if pid <= 4:
                     continue
 
                 raw_name = p.info.get("name") or ""
@@ -115,6 +127,14 @@ def find_offending_pid(
                     or (target_filename and target_filename in cmdline_str)
                     or "simulate_attack" in cmdline_str
                 )
+
+                if pid in protected_pids:
+                    if cwd_matches or cmd_matches:
+                        logger.warning(
+                            "Protected PID matched: PID %d (%s) is in self/ancestor chain %s — excluded from attribution candidates.",
+                            pid, raw_name, protected_pids
+                        )
+                    continue
 
                 priority = 0
                 if cwd_matches:
@@ -187,6 +207,12 @@ def find_offending_pid(
                         matched_dir_files.append(f.path)
 
                 if has_direct:
+                    if pid in protected_pids:
+                        logger.warning(
+                            "Protected PID matched canary open handle: PID %d (%s) is in self/ancestor chain %s — excluded from attribution.",
+                            pid, pname, protected_pids
+                        )
+                        continue
                     direct_match_candidate = {
                         "pid": pid,
                         "name": pname,
@@ -271,6 +297,12 @@ def find_offending_pid(
     if directory_candidates:
         surviving_candidates: List[Dict[str, Any]] = []
         for c in directory_candidates.values():
+            if c["pid"] in protected_pids:
+                logger.warning(
+                    "Protected PID matched in directory candidates: PID %d (%s) is in self/ancestor chain %s — excluded.",
+                    c["pid"], c["name"], protected_pids
+                )
+                continue
             try:
                 proc = c["proc"]
                 if proc.is_running() and proc.status() != psutil.STATUS_ZOMBIE:

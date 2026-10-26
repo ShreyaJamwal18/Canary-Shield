@@ -17,7 +17,10 @@ import json
 from typing import List, Dict, Any
 
 # --- Project & Base Paths ------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+if getattr(sys, "frozen", False):
+    BASE_DIR = os.path.dirname(os.path.abspath(sys.executable))
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Dedicated sandbox directory created strictly INSIDE this project repository (HARD RULE 1).
 # Never points to ~/Documents, Desktop, or any real user directories during testing.
