@@ -13,3 +13,4 @@ dist_exe/
 build_exe/
 build/
 dist/
+*.lnk

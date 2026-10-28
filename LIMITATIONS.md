@@ -4,25 +4,28 @@
 
 ---
 
-While Canary Shield effectively demonstrates deception-based ransomware containment in userland, evaluators should be aware of the following fundamental limitations of this prototype:
+While Canary Shield effectively demonstrates deception-based ransomware containment, evaluators should understand the following fundamental constraints of this prototype:
 
-1. **Handle-Closure Race Condition on Ultra-Fast Writes**:
-   If a ransomware binary opens a canary file, writes encrypted payload, and immediately closes the file handle within a fraction of a millisecond, the OS file handle is released before `watchdog`'s user-space event callback triggers `psutil.open_files()`. In such scenarios, direct handle matching cannot find the active handle, forcing reliance on the directory activity fallback heuristic.
+1. **Attribution is Heuristic and Simulator-Tested**:
+   PID attribution relies on heuristic signals (directory match, command-line arguments, or direct open file handles when available) and is reported with an explicit confidence level (`HIGH`, `MEDIUM`, `LOW`, or `NONE`). It has only been evaluated against the bundled benign simulator, not real-world weaponized ransomware.
 
-2. **Absence of Kernel-Level (Minifilter / ETW) Tracing**:
-   Canary Shield operates entirely in userland via the Python `watchdog` library (which wraps the Win32 `ReadDirectoryChangesW` API). It lacks a Windows Kernel Filesystem Minifilter driver or Event Tracing for Windows (ETW) provider (`Microsoft-Windows-Kernel-File`). Consequently, it cannot intercept I/O synchronously *before* the filesystem write completes, nor can it inspect the caller's thread token directly at the kernel driver layer.
+2. **Detection is Not Prevention (Decoys are Sacrificed)**:
+   Canary Shield detects threats only *after* a decoy tripwire is accessed or modified. Consequently, at least one decoy file is typically touched and encrypted before the attacker is identified and stopped. Any genuine user files accessed before the canary is tripped remain encrypted; Canary Shield does not provide automated cryptographic rollback or recovery.
 
-3. **Lack of Automated Cryptographic Rollback**:
-   Canary Shield is an **interception and containment** mechanism, not a data recovery tool. Decoys are designed to be sacrificed to trip the alarm early. Any user files that were accessed and encrypted *prior* to the ransomware tripping a canary remain encrypted. Canary Shield does not implement Volume Shadow Copy (VSS) restoration or automated filesystem snapshot rollbacks.
+3. **Simulator Handle-Holding vs. Real Malware**:
+   The bundled attack simulator holds open file handles briefly (e.g., 0.4 seconds in the test harness) to demonstrate direct handle attribution. Real ransomware families often open, encrypt, and close file handles within milliseconds, which makes direct handle matching harder and forces the defense to rely on the directory activity fallback heuristic.
 
-4. **Heuristic PID Attribution Ambiguity Under Concurrent Activity**:
-   When falling back to the directory heuristic (if direct handle matching yields no match), Canary Shield aggregates non-allowlisted processes with open files or active working directories near the target path. In high-traffic environments where multiple background applications are actively reading or writing files in the same directory simultaneously, the heuristic can misattribute the offending PID or suffer reduced confidence.
+4. **Process Cache Polling Window**:
+   The incremental process cache polls `psutil.pids()` approximately every 100 ms to discover newly spawned processes with minimal overhead. If an attacker process launches and completes its malicious actions entirely within that 100 ms polling window, it will not yet be in the pre-warmed cache and the system falls back to a slower fresh scan.
 
-5. **Single-OS Specialization (Windows Focus)**:
-   While Python and `psutil` are cross-platform, this prototype is engineered around Windows filesystem semantics (case-insensitive path resolution, Windows `FILE_ATTRIBUTE_HIDDEN` flags, Windows process name conventions, and `TerminateProcess` semantics). It does not currently implement Linux fanotify, macOS FSEvents, or POSIX extended permission monitoring.
+5. **User-Space Architecture and Privilege Constraints**:
+   The monitor runs as an ordinary user-space Python process. Any malware executing with administrative or SYSTEM privileges could theoretically terminate or suspend Canary Shield itself. A production-grade implementation would require deployment as an Early Launch Anti-Malware (ELAM) driver, a Windows Protected Service (PPL), or a kernel filesystem minifilter using Event Tracing for Windows (ETW `Microsoft-Windows-Kernel-File`).
 
-6. **Process Termination Race on Multi-Threaded / Distributed Ransomware**:
-   Modern sophisticated ransomware families (e.g., LockBit 3.0, BlackCat) employ multi-threaded encryption pools or spawn separate helper child processes per drive or directory. Terminating the single parent PID that tripped the canary may allow already-spawned asynchronous worker threads or subprocesses to briefly continue encryption unless the entire process tree is recursively identified and suspended.
+6. **VSS Guard Disabled by Default**:
+   The Volume Shadow Copy (VSS) anti-recovery guard is disabled by default in configuration because it performs system-wide process scanning that creates unnecessary overhead outside the sandbox scope.
 
-7. **Decoy Signature & Evasion Vulnerability**:
-   This prototype plants canaries based on specific naming patterns (`!_`, `00_`, `~$`) and file headers. Sophisticated zero-day ransomware specifically programmed with anti-canary heuristics (e.g., detecting hidden file attributes, checking file creation timestamps against system uptime, or cross-referencing recent user activity logs) could theoretically identify and avoid touching the decoy files.
+7. **Standalone Executable Scope**:
+   The standalone binary bundle in `dist_exe/` was compiled during early packaging tests prior to the process-cache optimization and is not part of the verified demo or benchmark path. The canonical evaluation path is `app.py` via the Desktop shortcut / `CanaryShield.bat` or `python main.py`.
+
+8. **Measured Containment Performance Scope**:
+   In 5 consecutive runs of `run_full_e2e_test.py` in test mode (`CANARY_TEST_MODE=1`) after process-cache optimization, the median time-to-contain was about **260 ms**, and the worst run was about **950 ms** (typically about a quarter of a second, under a second in the worst test run). Before optimization, the median was about 930 ms and the worst run was about 2450 ms. Typically 1 decoy is touched before containment (before optimization: 1 to 4). Note that all benchmark numbers were measured strictly against the bundled benign simulator in a local sandbox on one Windows machine.

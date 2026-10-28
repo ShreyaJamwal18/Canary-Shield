@@ -41,7 +41,7 @@ python main.py
 [Initialization] TARGET SANDBOX PATH: C:\Users\91700\Documents\MDC\test_sandbox
 [Canary Shield] EXECUTION MODE: TEST MODE (CANARY_TEST_MODE=1)
 [Canary Shield] Note: python.exe is permitted for attack simulation.
-[Canary Shield] Protected Allowlist Size: 118 processes
+[Canary Shield] Protected Allowlist Size: 140 processes
 
 [Canary Shield] Step 1: Planting realistic decoy canary files in sandbox...
 [Canary Shield] Successfully armed 10 decoy tripwires.
@@ -86,14 +86,17 @@ python simulate_attack.py --delay 0.08 --hold-handle 0.4
 
 ## Step 3: Observe Detection & Containment — Terminal 1
 
-Look back at **Terminal 1**. You will see the instant tripwire alert and PID kill:
+Look back at **Terminal 1**. You will see the tripwire alert and PID kill (typically about a quarter of a second, under a second in the worst test run):
 
 ```
 [ALERT] CANARY TRIGGERED: MODIFIED on ...test_sandbox\!_confidential_client_contracts_index.docx
 
-[Canary Shield] Attributed PID: 7048 | Method: directory_heuristic | Confidence: MEDIUM | Latency: 707 ms
+[ATTRIBUTION SUBSTEPS] Enum: 0.10 ms | cwd/cmdline: 0.00 ms | open_files: 107.45 ms | Total Attr: 158.03 ms (Scanned 1 procs, 1 inspected, source=incremental_cache)
+[Canary Shield] Attributed PID: 7048 | Method: directory_heuristic | Confidence: MEDIUM | Latency: 158 ms
 [Canary Shield] >>> CONTAINMENT ACTIVE: Process 7048 TERMINATED <<<
 ```
+
+> **Containment Performance Note**: In 5 consecutive runs of `run_full_e2e_test.py` in test mode after the process-cache optimization, the median time-to-contain was about **260 ms**, and the worst run was about **950 ms** (typically about a quarter of a second, under a second in the worst test run). Before optimization, the median was about 930 ms and the worst was about 2450 ms. Typically 1 decoy is touched before containment (before optimization: 1 to 4). Note that these were measured against the bundled benign simulator in a sandbox on one Windows machine.
 
 ---
 
@@ -123,6 +126,17 @@ Highlight to evaluators:
 3. **`PID=5456 (python.exe)`** → offending process correctly identified
 4. **`Confidence=MEDIUM`** → honest confidence grading
 5. **`CONTAINMENT SUCCESS`** → process terminated
+
+---
+
+## Optional: Interactive Desktop GUI Demo
+
+Alternatively, evaluators can witness the entire defense pipeline through the CustomTkinter desktop interface:
+1. Double-click the **Canary Shield** shortcut on the Desktop (or run `CanaryShield.bat` from the MDC folder).
+2. Accept the Windows Administrator UAC prompt.
+3. In the Dashboard header, click **ARM SHIELD**. The status updates to indicate active tripwires and incremental process cache monitoring.
+4. In the Attack Simulator section, click **🚀 Launch Attack Simulation**.
+5. Observe the live event feed, prompt threat attribution, process freeze/kill, and forensic report generation logged in real time.
 
 ---
 

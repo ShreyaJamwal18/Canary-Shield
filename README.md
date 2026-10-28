@@ -1,7 +1,7 @@
 # Canary Shield — Deception-Based Zero-Day Ransomware Mitigation
 
 **Engineering Capstone Project**  
-*An active cyber-defense framework that protects endpoints against novel zero-day ransomware using filesystem honeytokens, real-time event telemetry, and immediate process containment.*
+*An active cyber-defense framework that protects endpoints against novel zero-day ransomware using filesystem honeytokens, real-time event telemetry, and rapid process containment.*
 
 ---
 
@@ -14,8 +14,8 @@ Traditional endpoint protection platforms (EPP) and antivirus tools rely primari
 2. **Tripwire Monitoring**: Leveraging OS-level filesystem event hooks (`watchdog` / Windows `ReadDirectoryChangesW`), Canary Shield continuously monitors canary tripwires. Any modification, rename, or deletion of a decoy trips the defense.
 3. **Real-Time PID Attribution**: When a tripwire fires, Canary Shield inspects running processes via `psutil` using a two-stage attribution engine:
    - **Direct Handle Match (Gold Standard)**: Inspects active OS file handles holding the canary open.
-   - **Directory Heuristic Fallback**: If the offending process closed the handle rapidly before inspection, aggregates and scores non-allowlisted processes actively manipulating files in the canary's directory.
-4. **Instant Containment**: Terminating the identified process (`TerminateProcess` on Windows) before the ransomware can proceed to encrypt genuine user files.
+   - **Directory Heuristic Fallback**: If the offending process closed the handle rapidly before inspection, aggregates and scores non-allowlisted processes actively manipulating files or running in the canary's directory.
+4. **Rapid Process Containment**: Freezing and terminating the identified process (`TerminateProcess` on Windows) before the ransomware can proceed to encrypt genuine user files.
 
 ---
 
@@ -57,7 +57,27 @@ The system is modularized into seven core components:
 | [`process_id.py`](file:///c:/Users/91700/Documents/MDC/process_id.py) | Correlates filesystem events to offending process PIDs. First checks exact open file handles (High confidence); falls back to directory-activity heuristics if handles closed quickly. Logs telemetry in JSON format. |
 | [`contain.py`](file:///c:/Users/91700/Documents/MDC/contain.py) | Terminates verified offender PIDs using `proc.kill()`. Strictly enforces production allowlists and fails safe on any uncertainty, ambiguity, or exception. |
 | [`main.py`](file:///c:/Users/91700/Documents/MDC/main.py) | Entry point: initializes decoys in the sandbox and launches real-time monitoring. |
+| [`app.py`](file:///c:/Users/91700/Documents/MDC/app.py) | Desktop GUI application built with CustomTkinter: provides real-time telemetry, shield ARM/DISARM controls, attack simulator console, and forensic incident log viewer. |
 | [`simulate_attack.py`](file:///c:/Users/91700/Documents/MDC/simulate_attack.py) | Benign test harness: seeds mock user files and simulates ransomware I/O patterns (read -> overwrite -> rename to `.locked`) to validate containment. |
+
+---
+
+## Performance & Containment Timing
+
+Empirical measurements revealed that approximately 95% of the original time-to-contain was consumed by process lookup (`psutil.process_iter` cold iteration plus exhaustive `open_files` inspection), rather than the process freeze and termination mechanisms (which together take about 55 ms).
+
+To eliminate this bottleneck, three optimizations were implemented:
+1. **Incremental Process Cache**: A background thread polls `psutil.pids()` about every 100 ms and queries full metadata (`name`, `create_time`, `cwd`, `cmdline`) only for newly spawned PIDs. Entries are keyed by `(pid, create_time)` to prevent PID reuse vulnerabilities. If the cache produces zero candidates, attribution immediately falls back to a fresh scan.
+2. **Bounded Parallel Handle Inspection**: Process candidates are queried concurrently using a worker pool with a strict 200 ms timeout per batch, preventing a single slow process handle scan from stalling containment.
+3. **Asynchronous Forensics**: Malware quarantine copying, SHA-256 hashing, and JSON/HTML incident report generation are dispatched to a post-containment background thread after the kill is confirmed, keeping the critical containment loop completely unblocked.
+
+### Measured Benchmark Results
+Across 5 consecutive runs of `run_full_e2e_test.py` in test mode (`CANARY_TEST_MODE=1`):
+- **After optimization**: Median time-to-contain was about **260 ms**, with the worst run at about **950 ms** (typically about a quarter of a second, under a second in the worst test run).
+- **Before optimization**: Median time-to-contain was about **930 ms**, with the worst run at about **2450 ms**.
+- **Blast radius**: Typically **1 decoy** is touched before containment (before optimization: 1 to 4 decoys). In all 5 runs, 100% (5 of 5) of genuine user files survived intact.
+
+*(Note: These figures were measured against the bundled benign simulator in a sandbox on one Windows machine.)*
 
 ---
 
@@ -66,9 +86,15 @@ The system is modularized into seven core components:
 ### Prerequisites
 - Windows 10/11 (64-bit)
 - Python 3.10+
-- Administrative (Elevated) privileges (required for Windows handle querying and process termination)
+- Administrative (Elevated) privileges (required for Windows handle querying, thread suspension, and process termination)
 
-### Quick Start
+### Desktop GUI (Recommended)
+Canary Shield provides a modern desktop GUI interface built with CustomTkinter:
+- **Launch via Desktop Shortcut**: Double-click the **Canary Shield** shortcut on your Desktop.
+- **Launch via Batch Script**: Run `CanaryShield.bat` from the MDC project folder.
+- *Administrator Access*: Both launch methods will prompt for Windows Administrator elevation (UAC prompt).
+
+### CLI Quick Start
 ```powershell
 # 1. Install dependencies
 pip install -r requirements.txt
