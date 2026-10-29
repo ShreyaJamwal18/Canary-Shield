@@ -123,6 +123,7 @@ class CanaryShieldApp(ctk.CTk):
         self.threats_blocked_count = 0
         self.current_view_name = "dashboard"
         self.view_frames: Dict[str, ctk.CTkFrame] = {}
+        self.presentation_window: Optional[ctk.CTkToplevel] = None
 
         # Setup Logging Interception
         self._setup_logging()
@@ -153,7 +154,7 @@ class CanaryShieldApp(ctk.CTk):
         # Sidebar Frame
         self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=COLOR_SIDEBAR)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(8, weight=1)
+        self.sidebar_frame.grid_rowconfigure(9, weight=1)
 
         # Sidebar Header / Brand with PNG logo
         png_file = resource_path(os.path.join("assets", "canary_shield.png"))
@@ -223,9 +224,23 @@ class CanaryShieldApp(ctk.CTk):
             btn.grid(row=idx, column=0, padx=12, pady=4, sticky="ew")
             self.nav_buttons[view_id] = btn
 
+        # Presentation item in sidebar (opens presentation window, does NOT replace current view)
+        self.btn_presentation = ctk.CTkButton(
+            self.sidebar_frame,
+            text="📽️  Presentation",
+            anchor="w",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="normal"),
+            fg_color="transparent",
+            text_color=COLOR_TEXT_MUTED,
+            hover_color=COLOR_CARD,
+            height=38,
+            command=self.open_presentation,
+        )
+        self.btn_presentation.grid(row=8, column=0, padx=12, pady=4, sticky="ew")
+
         # Sidebar Bottom Status Card
         self.sidebar_status_card = ctk.CTkFrame(self.sidebar_frame, fg_color=COLOR_CARD, corner_radius=8)
-        self.sidebar_status_card.grid(row=9, column=0, padx=12, pady=20, sticky="ew")
+        self.sidebar_status_card.grid(row=10, column=0, padx=12, pady=20, sticky="ew")
 
         self.sidebar_mode_badge = ctk.CTkLabel(
             self.sidebar_status_card,
@@ -282,6 +297,18 @@ class CanaryShieldApp(ctk.CTk):
             self._refresh_decoys_table()
         elif view_name == "incidents":
             self._refresh_incidents_list()
+
+    def open_presentation(self):
+        """Open or focus the in-app presentation window."""
+        if hasattr(self, "presentation_window") and self.presentation_window is not None:
+            try:
+                if self.presentation_window.winfo_exists():
+                    self.presentation_window.focus_window()
+                    return
+            except Exception:
+                pass
+        from presentation_view import PresentationWindow
+        self.presentation_window = PresentationWindow(self)
 
     # =========================================================================
     # VIEW 1: DASHBOARD
@@ -420,6 +447,16 @@ class CanaryShieldApp(ctk.CTk):
             command=lambda: self.switch_view("incidents"),
         )
         btn_reports.pack(fill="x", padx=20, pady=4)
+
+        btn_presentation = ctk.CTkButton(
+            actions_panel,
+            text="📽️ Open Presentation",
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
+            height=34,
+            command=self.open_presentation,
+        )
+        btn_presentation.pack(fill="x", padx=20, pady=4)
 
         return frame
 
@@ -1365,6 +1402,14 @@ class CanaryShieldApp(ctk.CTk):
                 except Exception:
                     pass
                 self.self_healing_thread = None
+
+            # 5. Destroy slideshow window if open
+            if hasattr(self, "presentation_window") and self.presentation_window is not None:
+                try:
+                    self.presentation_window.destroy()
+                except Exception:
+                    pass
+                self.presentation_window = None
 
             self.is_armed = False
         finally:
