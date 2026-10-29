@@ -66,24 +66,17 @@ import service_runner
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-# Theme Palette (Modern Cybersecurity Obsidian & Sky)
-COLOR_BG = "#080c14"
-COLOR_SIDEBAR = "#0c1322"
-COLOR_CARD = "#121a2c"
-COLOR_CARD_HOVER = "#182238"
-COLOR_CARD_BORDER = "#1e2c47"
-COLOR_CARD_SUBTLE = "#0e1524"
-COLOR_ACCENT = "#38bdf8"
-COLOR_ACCENT_HOVER = "#0284c7"
+# Theme Palette (Modern Cybersecurity Dark)
+COLOR_BG = "#0b1120"
+COLOR_SIDEBAR = "#0f172a"
+COLOR_CARD = "#1e293b"
+COLOR_CARD_HOVER = "#334155"
+COLOR_ACCENT = "#0ea5e9"
 COLOR_SUCCESS = "#10b981"
-COLOR_SUCCESS_HOVER = "#059669"
-COLOR_DANGER = "#f43f5e"
-COLOR_DANGER_HOVER = "#e11d48"
+COLOR_DANGER = "#ef4444"
 COLOR_WARNING = "#f59e0b"
-COLOR_TEXT_MAIN = "#f8fafc"
 COLOR_TEXT_MUTED = "#94a3b8"
-COLOR_TEXT_DIM = "#64748b"
-COLOR_TERMINAL_BG = "#050811"
+COLOR_TEXT_MAIN = "#f8fafc"
 
 
 class QueueLogHandler(logging.Handler):
@@ -106,9 +99,9 @@ class CanaryShieldApp(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        self.title("Canary Shield — Autonomous Endpoint Defense Console")
-        self.geometry("1180x760")
-        self.minsize(1000, 660)
+        self.title("Canary Shield Console")
+        self.geometry("1140x740")
+        self.minsize(980, 640)
         self.configure(fg_color=COLOR_BG)
 
         # Application & Taskbar Icon
@@ -158,71 +151,52 @@ class CanaryShieldApp(ctk.CTk):
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
 
-        # =====================================================================
-        # SIDEBAR FRAME
-        # =====================================================================
-        self.sidebar_frame = ctk.CTkFrame(
-            self,
-            width=230,
-            corner_radius=0,
-            fg_color=COLOR_SIDEBAR,
-            border_width=0,
-        )
+        # Sidebar Frame
+        self.sidebar_frame = ctk.CTkFrame(self, width=220, corner_radius=0, fg_color=COLOR_SIDEBAR)
         self.sidebar_frame.grid(row=0, column=0, sticky="nsew")
-        self.sidebar_frame.grid_rowconfigure(10, weight=1)
+        self.sidebar_frame.grid_rowconfigure(9, weight=1)
 
         # Sidebar Header / Brand with PNG logo
         png_file = resource_path(os.path.join("assets", "canary_shield.png"))
-        brand_top_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        brand_top_frame.grid(row=0, column=0, padx=16, pady=(22, 4), sticky="w")
-
         if os.path.exists(png_file):
             try:
                 logo_pil = Image.open(png_file)
                 self.sidebar_logo_img = ctk.CTkImage(
                     light_image=logo_pil,
                     dark_image=logo_pil,
-                    size=(28, 28)
+                    size=(26, 26)
                 )
                 brand_label = ctk.CTkLabel(
-                    brand_top_frame,
+                    self.sidebar_frame,
                     text=" CANARY SHIELD",
                     image=self.sidebar_logo_img,
                     compound="left",
-                    font=ctk.CTkFont(family="Segoe UI", size=17, weight="bold"),
-                    text_color=COLOR_TEXT_MAIN,
+                    font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                    text_color=COLOR_ACCENT,
                 )
             except Exception:
                 brand_label = ctk.CTkLabel(
-                    brand_top_frame,
+                    self.sidebar_frame,
                     text="CANARY SHIELD",
-                    font=ctk.CTkFont(family="Segoe UI", size=17, weight="bold"),
-                    text_color=COLOR_TEXT_MAIN,
+                    font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                    text_color=COLOR_ACCENT,
                 )
         else:
             brand_label = ctk.CTkLabel(
-                brand_top_frame,
+                self.sidebar_frame,
                 text="CANARY SHIELD",
-                font=ctk.CTkFont(family="Segoe UI", size=17, weight="bold"),
-                text_color=COLOR_TEXT_MAIN,
+                font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+                text_color=COLOR_ACCENT,
             )
-        brand_label.pack(side="left")
+        brand_label.grid(row=0, column=0, padx=20, pady=(24, 2), sticky="w")
 
-        # Subtitle badge pill
-        badge_frame = ctk.CTkFrame(self.sidebar_frame, fg_color="transparent")
-        badge_frame.grid(row=1, column=0, padx=16, pady=(0, 16), sticky="w")
-
-        sub_tag = ctk.CTkLabel(
-            badge_frame,
-            text="EDR DECEPTION ENGINE",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color=COLOR_ACCENT,
+        subtitle_label = ctk.CTkLabel(
+            self.sidebar_frame,
+            text="Deception-based Ransomware Defense",
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color=COLOR_TEXT_MUTED,
         )
-        sub_tag.pack(side="left")
-
-        # Subtle divider
-        sep = ctk.CTkFrame(self.sidebar_frame, height=1, fg_color=COLOR_CARD_BORDER)
-        sep.grid(row=2, column=0, padx=14, pady=(0, 14), sticky="ew")
+        subtitle_label.grid(row=1, column=0, padx=20, pady=(0, 20), sticky="w")
 
         # Sidebar Navigation Buttons
         self.nav_buttons = {}
@@ -235,7 +209,7 @@ class CanaryShieldApp(ctk.CTk):
             ("settings", "⚙️  Configuration"),
         ]
 
-        for idx, (view_id, label_text) in enumerate(nav_items, start=3):
+        for idx, (view_id, label_text) in enumerate(nav_items, start=2):
             btn = ctk.CTkButton(
                 self.sidebar_frame,
                 text=label_text,
@@ -243,15 +217,14 @@ class CanaryShieldApp(ctk.CTk):
                 font=ctk.CTkFont(family="Segoe UI", size=13, weight="normal"),
                 fg_color="transparent",
                 text_color=COLOR_TEXT_MUTED,
-                hover_color=COLOR_CARD_HOVER,
-                corner_radius=8,
+                hover_color=COLOR_CARD,
                 height=38,
                 command=lambda v=view_id: self.switch_view(v),
             )
-            btn.grid(row=idx, column=0, padx=12, pady=3, sticky="ew")
+            btn.grid(row=idx, column=0, padx=12, pady=4, sticky="ew")
             self.nav_buttons[view_id] = btn
 
-        # Presentation item in sidebar
+        # Presentation item in sidebar (opens presentation window, does NOT replace current view)
         self.btn_presentation = ctk.CTkButton(
             self.sidebar_frame,
             text="📽️  Presentation",
@@ -259,50 +232,33 @@ class CanaryShieldApp(ctk.CTk):
             font=ctk.CTkFont(family="Segoe UI", size=13, weight="normal"),
             fg_color="transparent",
             text_color=COLOR_TEXT_MUTED,
-            hover_color=COLOR_CARD_HOVER,
-            corner_radius=8,
+            hover_color=COLOR_CARD,
             height=38,
             command=self.open_presentation,
         )
-        self.btn_presentation.grid(row=9, column=0, padx=12, pady=3, sticky="ew")
+        self.btn_presentation.grid(row=8, column=0, padx=12, pady=4, sticky="ew")
 
         # Sidebar Bottom Status Card
-        self.sidebar_status_card = ctk.CTkFrame(
-            self.sidebar_frame,
-            fg_color=COLOR_CARD,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
-        self.sidebar_status_card.grid(row=11, column=0, padx=12, pady=16, sticky="ew")
+        self.sidebar_status_card = ctk.CTkFrame(self.sidebar_frame, fg_color=COLOR_CARD, corner_radius=8)
+        self.sidebar_status_card.grid(row=10, column=0, padx=12, pady=20, sticky="ew")
 
         self.sidebar_mode_badge = ctk.CTkLabel(
             self.sidebar_status_card,
-            text="● TEST SANDBOX" if is_test_mode() else "● PRODUCTION",
+            text="MODE: TEST SANDBOX" if is_test_mode() else "MODE: PRODUCTION",
             font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
             text_color=COLOR_WARNING if is_test_mode() else COLOR_ACCENT,
         )
-        self.sidebar_mode_badge.pack(padx=12, pady=(10, 2), anchor="w")
+        self.sidebar_mode_badge.pack(padx=10, pady=(8, 2), anchor="w")
 
         self.sidebar_shield_badge = ctk.CTkLabel(
             self.sidebar_status_card,
-            text="○ SHIELD DISARMED",
+            text="● SHIELD DISARMED",
             font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
             text_color=COLOR_TEXT_MUTED,
         )
-        self.sidebar_shield_badge.pack(padx=12, pady=(2, 4), anchor="w")
+        self.sidebar_shield_badge.pack(padx=10, pady=(2, 8), anchor="w")
 
-        self.sidebar_procs_badge = ctk.CTkLabel(
-            self.sidebar_status_card,
-            text=f"Baseline: {len(get_active_allowlist())} Procs Safe",
-            font=ctk.CTkFont(family="Segoe UI", size=10),
-            text_color=COLOR_TEXT_DIM,
-        )
-        self.sidebar_procs_badge.pack(padx=12, pady=(0, 10), anchor="w")
-
-        # =====================================================================
-        # MAIN WORKSPACE CONTAINER
-        # =====================================================================
+        # Main Workspace Container
         self.main_container = ctk.CTkFrame(self, corner_radius=0, fg_color=COLOR_BG)
         self.main_container.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
         self.main_container.grid_rowconfigure(0, weight=1)
@@ -332,20 +288,9 @@ class CanaryShieldApp(ctk.CTk):
 
         for btn_name, btn in self.nav_buttons.items():
             if btn_name == view_name:
-                btn.configure(
-                    fg_color=COLOR_CARD,
-                    text_color=COLOR_ACCENT,
-                    font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
-                    border_width=1,
-                    border_color=COLOR_CARD_BORDER,
-                )
+                btn.configure(fg_color=COLOR_CARD, text_color=COLOR_TEXT_MAIN, font=ctk.CTkFont(weight="bold"))
             else:
-                btn.configure(
-                    fg_color="transparent",
-                    text_color=COLOR_TEXT_MUTED,
-                    font=ctk.CTkFont(family="Segoe UI", size=13, weight="normal"),
-                    border_width=0,
-                )
+                btn.configure(fg_color="transparent", text_color=COLOR_TEXT_MUTED, font=ctk.CTkFont(weight="normal"))
 
         # Trigger auto-refreshes when entering tabs
         if view_name == "decoys":
@@ -373,34 +318,28 @@ class CanaryShieldApp(ctk.CTk):
         frame.grid_columnconfigure((0, 1, 2, 3), weight=1)
 
         # Top Hero Card: Shield Status & Master Control
-        hero_card = ctk.CTkFrame(
-            frame,
-            fg_color=COLOR_CARD,
-            corner_radius=12,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        hero_card = ctk.CTkFrame(frame, fg_color=COLOR_CARD, corner_radius=12)
         hero_card.grid(row=0, column=0, columnspan=4, sticky="ew", pady=(0, 16), padx=0)
         hero_card.grid_columnconfigure(0, weight=1)
 
-        hero_inner = ctk.CTkFrame(hero_card, fg_color="transparent")
-        hero_inner.pack(fill="x", padx=24, pady=20)
+        hero_header_frame = ctk.CTkFrame(hero_card, fg_color="transparent")
+        hero_header_frame.pack(fill="x", padx=24, pady=20)
 
-        hero_text_col = ctk.CTkFrame(hero_inner, fg_color="transparent")
+        hero_text_col = ctk.CTkFrame(hero_header_frame, fg_color="transparent")
         hero_text_col.pack(side="left", fill="both", expand=True)
 
         self.dash_status_badge = ctk.CTkLabel(
             hero_text_col,
             text="○ SHIELD DISARMED — PROTECTION STANDBY",
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             text_color=COLOR_TEXT_MUTED,
         )
         self.dash_status_badge.pack(anchor="w", pady=(0, 4))
 
         self.dash_title = ctk.CTkLabel(
             hero_text_col,
-            text="Autonomous Deception-Based Ransomware Interception",
-            font=ctk.CTkFont(family="Segoe UI", size=21, weight="bold"),
+            text="Autonomous Zero-Day Ransomware Defense",
+            font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
             text_color=COLOR_TEXT_MAIN,
         )
         self.dash_title.pack(anchor="w", pady=(0, 6))
@@ -412,81 +351,33 @@ class CanaryShieldApp(ctk.CTk):
             font=ctk.CTkFont(family="Consolas", size=11),
             text_color=COLOR_TEXT_MUTED,
         )
-        self.dash_target_label.pack(anchor="w", pady=(0, 8))
-
-        # Hero Telemetry Chips Row
-        chips_frame = ctk.CTkFrame(hero_text_col, fg_color="transparent")
-        chips_frame.pack(anchor="w")
-
-        chip_cache = ctk.CTkLabel(
-            chips_frame,
-            text="Incremental Process Cache (~100ms)",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color=COLOR_ACCENT,
-            fg_color=COLOR_CARD_SUBTLE,
-            corner_radius=6,
-            padx=8,
-            pady=3,
-        )
-        chip_cache.pack(side="left", padx=(0, 8))
-
-        chip_allowlist = ctk.CTkLabel(
-            chips_frame,
-            text=f"Protected Windows Baseline: {len(get_active_allowlist())} Procs",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color=COLOR_SUCCESS,
-            fg_color=COLOR_CARD_SUBTLE,
-            corner_radius=6,
-            padx=8,
-            pady=3,
-        )
-        chip_allowlist.pack(side="left")
+        self.dash_target_label.pack(anchor="w")
 
         # Master Arm/Disarm Button
         self.dash_arm_button = ctk.CTkButton(
-            hero_inner,
+            hero_header_frame,
             text="ARM SHIELD",
             font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
             fg_color=COLOR_SUCCESS,
-            hover_color=COLOR_SUCCESS_HOVER,
-            height=48,
-            width=180,
-            corner_radius=10,
+            hover_color="#059669",
+            height=46,
+            width=170,
+            corner_radius=8,
             command=self.toggle_shield,
         )
-        self.dash_arm_button.pack(side="right", padx=(20, 0))
+        self.dash_arm_button.pack(side="right", padx=(16, 0))
 
         # Metrics Row (4 Cards)
-        self.metric_decoys = self._create_metric_card(
-            frame, row=1, col=0,
-            title="DECOY TRIPWIRES",
-            value="0 Present",
-            icon="🪤",
-            subtitle="Mimicry Honeypots"
-        )
-        self.metric_allowlist = self._create_metric_card(
-            frame, row=1, col=1,
-            title="PROTECTED BASELINE",
-            value=f"{len(get_active_allowlist())} Processes",
-            icon="🛡️",
-            subtitle="Frozen System Allowlist"
-        )
-        self.metric_threats = self._create_metric_card(
-            frame, row=1, col=2,
-            title="INCIDENTS CONTAINED",
-            value="0 Logged",
-            icon="🛑",
-            subtitle="Rapid Containment"
-        )
-        self.metric_vss = self._create_metric_card(
-            frame, row=1, col=3,
-            title="VSS RECOVERY GUARD",
-            value="Disabled (System)",
-            icon="🔒",
-            subtitle="Anti-Deletion Shield"
-        )
+        # Card 1: Decoy Tripwires
+        self.metric_decoys = self._create_metric_card(frame, row=1, col=0, title="DECOY TRIPWIRES", value="0 Present", icon="🪤", subtitle="Mimicry Honeypots")
+        # Card 2: Protected Allowlist
+        self.metric_allowlist = self._create_metric_card(frame, row=1, col=1, title="PROTECTED ALLOWLIST", value=f"{len(get_active_allowlist())} Processes", icon="🛡️", subtitle="Frozen allowlist")
+        # Card 3: Incidents Logged
+        self.metric_threats = self._create_metric_card(frame, row=1, col=2, title="INCIDENTS LOGGED", value="0 Logged", icon="🛑", subtitle="Sub-Second Containment")
+        # Card 4: VSS Guard
+        self.metric_vss = self._create_metric_card(frame, row=1, col=3, title="VSS BACKUP GUARD", value="Disabled (System-Wide)", icon="🔒", subtitle="Anti-Recovery Hook")
 
-        # Lower Split Row: Telemetry Feed Status & Quick Action Center
+        # Lower Split Row: Live Threat Banner & Quick Action Center
         split_row = ctk.CTkFrame(frame, fg_color="transparent")
         split_row.grid(row=2, column=0, columnspan=4, sticky="nsew", pady=(16, 0))
         frame.grid_rowconfigure(2, weight=1)
@@ -495,77 +386,33 @@ class CanaryShieldApp(ctk.CTk):
         split_row.grid_rowconfigure(0, weight=1)
 
         # Left: Live Threat Status Banner
-        threat_panel = ctk.CTkFrame(
-            split_row,
-            fg_color=COLOR_CARD,
-            corner_radius=12,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        threat_panel = ctk.CTkFrame(split_row, fg_color=COLOR_CARD, corner_radius=12)
         threat_panel.grid(row=0, column=0, sticky="nsew", padx=(0, 10))
 
-        # Threat Panel Header Bar
-        threat_header = ctk.CTkFrame(threat_panel, fg_color=COLOR_CARD_SUBTLE, height=36, corner_radius=8)
-        threat_header.pack(fill="x", padx=10, pady=(10, 8))
-
-        ctk.CTkLabel(
-            threat_header,
-            text="● ● ●  REAL-TIME DEFENSE TELEMETRY",
-            font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
+        threat_title = ctk.CTkLabel(
+            threat_panel,
+            text="ENDPOINT DEFENSE TELEMETRY",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             text_color=COLOR_ACCENT,
-        ).pack(side="left", padx=12, pady=6)
+        )
+        threat_title.pack(anchor="w", padx=20, pady=(16, 8))
 
         self.dash_threat_detail = ctk.CTkLabel(
             threat_panel,
-            text="Standby — shield is disarmed. Press ARM SHIELD to deploy active filesystem monitoring.",
+            text="Standby - shield is disarmed. Press ARM SHIELD to deploy monitoring.",
             font=ctk.CTkFont(family="Segoe UI", size=13),
             text_color=COLOR_TEXT_MUTED,
             justify="left",
-            wraplength=520,
         )
-        self.dash_threat_detail.pack(anchor="w", padx=20, pady=(10, 12))
-
-        # Telemetry capability status indicators
-        telemetry_meta_frame = ctk.CTkFrame(threat_panel, fg_color="transparent")
-        telemetry_meta_frame.pack(fill="x", padx=20, pady=(0, 16))
-
-        self.lbl_telemetry_engine = ctk.CTkLabel(
-            telemetry_meta_frame,
-            text="• Filesystem Watchdog: Inactive (Armed upon start)",
-            font=ctk.CTkFont(family="Consolas", size=11),
-            text_color=COLOR_TEXT_DIM,
-        )
-        self.lbl_telemetry_engine.pack(anchor="w", pady=1)
-
-        self.lbl_telemetry_cache = ctk.CTkLabel(
-            telemetry_meta_frame,
-            text="• Process Attribution: Incremental PID Scanner (<100ms)",
-            font=ctk.CTkFont(family="Consolas", size=11),
-            text_color=COLOR_TEXT_DIM,
-        )
-        self.lbl_telemetry_cache.pack(anchor="w", pady=1)
-
-        self.lbl_telemetry_quarantine = ctk.CTkLabel(
-            telemetry_meta_frame,
-            text="• Evidence Vault: SHA-256 Hashing & HTML Forensic Reports",
-            font=ctk.CTkFont(family="Consolas", size=11),
-            text_color=COLOR_TEXT_DIM,
-        )
-        self.lbl_telemetry_quarantine.pack(anchor="w", pady=1)
+        self.dash_threat_detail.pack(anchor="w", padx=20, pady=(0, 16))
 
         # Right: Quick Demonstration & Action Center
-        actions_panel = ctk.CTkFrame(
-            split_row,
-            fg_color=COLOR_CARD,
-            corner_radius=12,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        actions_panel = ctk.CTkFrame(split_row, fg_color=COLOR_CARD, corner_radius=12)
         actions_panel.grid(row=0, column=1, sticky="nsew", padx=(10, 0))
 
         actions_title = ctk.CTkLabel(
             actions_panel,
-            text="RAPID OPERATIONS",
+            text="QUICK ACTIONS",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             text_color=COLOR_ACCENT,
         )
@@ -573,13 +420,10 @@ class CanaryShieldApp(ctk.CTk):
 
         btn_deploy = ctk.CTkButton(
             actions_panel,
-            text="Deploy 10 Decoy Honeypots",
-            fg_color=COLOR_CARD_SUBTLE,
-            hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-            height=36,
-            corner_radius=8,
+            text="Deploy 10 Decoys",
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
+            height=34,
             command=self.deploy_decoys_action,
         )
         btn_deploy.pack(fill="x", padx=20, pady=4)
@@ -587,24 +431,19 @@ class CanaryShieldApp(ctk.CTk):
         btn_test = ctk.CTkButton(
             actions_panel,
             text="🧪 Launch Attack Demo",
-            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             fg_color=COLOR_ACCENT,
-            hover_color=COLOR_ACCENT_HOVER,
-            height=36,
-            corner_radius=8,
+            hover_color="#0284c7",
+            height=34,
             command=lambda: self.switch_view("simulator"),
         )
         btn_test.pack(fill="x", padx=20, pady=4)
 
         btn_reports = ctk.CTkButton(
             actions_panel,
-            text="📁 Open Forensics Vault",
-            fg_color=COLOR_CARD_SUBTLE,
-            hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-            height=36,
-            corner_radius=8,
+            text="Open Forensic Reports",
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
+            height=34,
             command=lambda: self.switch_view("incidents"),
         )
         btn_reports.pack(fill="x", padx=20, pady=4)
@@ -612,12 +451,9 @@ class CanaryShieldApp(ctk.CTk):
         btn_presentation = ctk.CTkButton(
             actions_panel,
             text="📽️ Open Presentation",
-            fg_color=COLOR_CARD_SUBTLE,
-            hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-            height=36,
-            corner_radius=8,
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
+            height=34,
             command=self.open_presentation,
         )
         btn_presentation.pack(fill="x", padx=20, pady=4)
@@ -625,15 +461,9 @@ class CanaryShieldApp(ctk.CTk):
         return frame
 
     def _create_metric_card(self, parent, row: int, col: int, title: str, value: str, icon: str, subtitle: str) -> Dict[str, Any]:
-        """Construct standardized metric card with 1px border and refined typography."""
-        card = ctk.CTkFrame(
-            parent,
-            fg_color=COLOR_CARD,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
-        card.grid(row=row, column=col, padx=4 if 0 < col < 3 else (0 if col == 0 else (4, 0)), sticky="ew")
+        """Construct standardized metric card."""
+        card = ctk.CTkFrame(parent, fg_color=COLOR_CARD, corner_radius=10)
+        card.grid(row=row, column=col, padx=4 if col > 0 and col < 3 else (0 if col == 0 else (4, 0)), sticky="ew")
 
         header_frame = ctk.CTkFrame(card, fg_color="transparent")
         header_frame.pack(fill="x", padx=16, pady=(14, 4))
@@ -661,7 +491,7 @@ class CanaryShieldApp(ctk.CTk):
             card,
             text=subtitle,
             font=ctk.CTkFont(family="Segoe UI", size=10),
-            text_color=COLOR_TEXT_DIM,
+            text_color=COLOR_TEXT_MUTED,
         )
         lbl_sub.pack(anchor="w", padx=16, pady=(0, 14))
 
@@ -677,7 +507,7 @@ class CanaryShieldApp(ctk.CTk):
 
         # Header & Actions
         header_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 8))
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 12))
 
         title = ctk.CTkLabel(
             header_frame,
@@ -694,9 +524,8 @@ class CanaryShieldApp(ctk.CTk):
             btn_box,
             text="Deploy / Refresh Decoys",
             fg_color=COLOR_SUCCESS,
-            hover_color=COLOR_SUCCESS_HOVER,
+            hover_color="#059669",
             height=32,
-            corner_radius=8,
             command=self.deploy_decoys_action,
         )
         btn_deploy.pack(side="left", padx=4)
@@ -704,12 +533,9 @@ class CanaryShieldApp(ctk.CTk):
         btn_clean = ctk.CTkButton(
             btn_box,
             text="Purge Decoys",
-            fg_color=COLOR_CARD_SUBTLE,
-            hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
             height=32,
-            corner_radius=8,
             command=self.clean_decoys_action,
         )
         btn_clean.pack(side="left", padx=4)
@@ -719,10 +545,7 @@ class CanaryShieldApp(ctk.CTk):
             text="Open Folder",
             fg_color=COLOR_CARD,
             hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
             height=32,
-            corner_radius=8,
             command=lambda: os.startfile(TEST_SANDBOX_DIR if is_test_mode() else get_watched_directories()[0]),
         )
         btn_folder.pack(side="left", padx=4)
@@ -734,18 +557,12 @@ class CanaryShieldApp(ctk.CTk):
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=COLOR_TEXT_MUTED,
             justify="left",
-            wraplength=880,
+            wraplength=850,
         )
-        desc.grid(row=1, column=0, sticky="w", pady=(0, 12))
+        desc.grid(row=1, column=0, sticky="w", pady=(0, 14))
 
         # Scrollable Decoys List
-        self.decoys_scroll = ctk.CTkScrollableFrame(
-            frame,
-            fg_color=COLOR_CARD,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        self.decoys_scroll = ctk.CTkScrollableFrame(frame, fg_color=COLOR_CARD, corner_radius=10)
         self.decoys_scroll.grid(row=2, column=0, sticky="nsew")
         self.decoys_scroll.grid_columnconfigure(1, weight=1)
 
@@ -778,12 +595,12 @@ class CanaryShieldApp(ctk.CTk):
             return
 
         # Table Header
-        header = ctk.CTkFrame(self.decoys_scroll, fg_color=COLOR_CARD_SUBTLE, corner_radius=6, height=32)
+        header = ctk.CTkFrame(self.decoys_scroll, fg_color=COLOR_CARD_HOVER, corner_radius=6, height=30)
         header.pack(fill="x", padx=6, pady=(4, 8))
-        ctk.CTkLabel(header, text="Status", width=84, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", padx=8)
+        ctk.CTkLabel(header, text="Status", width=80, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", padx=8)
         ctk.CTkLabel(header, text="Honeytoken Filename", font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", fill="x", expand=True, padx=8)
         ctk.CTkLabel(header, text="Format", width=80, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", padx=8)
-        ctk.CTkLabel(header, text="Strategy", width=120, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", padx=8)
+        ctk.CTkLabel(header, text="Attributes", width=90, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="left", padx=8)
         ctk.CTkLabel(header, text="Size", width=70, font=ctk.CTkFont(size=11, weight="bold"), text_color=COLOR_TEXT_MUTED).pack(side="right", padx=12)
 
         for fname, fpath, size_bytes, is_locked in canaries_found:
@@ -800,18 +617,18 @@ class CanaryShieldApp(ctk.CTk):
                 status_text = "PRESENT"
                 status_color = COLOR_TEXT_MUTED
 
-            badge = ctk.CTkLabel(row, text=status_text, width=84, font=ctk.CTkFont(size=10, weight="bold"), text_color=status_color)
+            badge = ctk.CTkLabel(row, text=status_text, width=80, font=ctk.CTkFont(size=10, weight="bold"), text_color=status_color)
             badge.pack(side="left", padx=8)
 
             name_lbl = ctk.CTkLabel(row, text=fname, anchor="w", font=ctk.CTkFont(family="Consolas", size=12), text_color=COLOR_TEXT_MAIN)
             name_lbl.pack(side="left", fill="x", expand=True, padx=8)
 
             ext = os.path.splitext(fname.replace(".locked", ""))[1].upper() or "DOC"
-            ext_lbl = ctk.CTkLabel(row, text=ext, width=80, font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"), text_color=COLOR_ACCENT)
+            ext_lbl = ctk.CTkLabel(row, text=ext, width=80, font=ctk.CTkFont(size=11), text_color=COLOR_ACCENT)
             ext_lbl.pack(side="left", padx=8)
 
-            strategy_lbl = ctk.CTkLabel(row, text="Early Traversal", width=120, font=ctk.CTkFont(size=10), text_color=COLOR_TEXT_DIM)
-            strategy_lbl.pack(side="left", padx=8)
+            attr_lbl = ctk.CTkLabel(row, text="HIDDEN", width=90, font=ctk.CTkFont(size=10), text_color=COLOR_TEXT_MUTED)
+            attr_lbl.pack(side="left", padx=8)
 
             size_str = f"{size_bytes} B" if size_bytes < 1024 else f"{size_bytes // 1024} KB"
             size_lbl = ctk.CTkLabel(row, text=size_str, width=70, font=ctk.CTkFont(size=11), text_color=COLOR_TEXT_MUTED)
@@ -827,7 +644,7 @@ class CanaryShieldApp(ctk.CTk):
 
         # Header
         header_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
         title = ctk.CTkLabel(
             header_frame,
@@ -847,12 +664,9 @@ class CanaryShieldApp(ctk.CTk):
         btn_clear = ctk.CTkButton(
             btn_box,
             text="Clear Feed",
-            fg_color=COLOR_CARD_SUBTLE,
+            fg_color=COLOR_CARD,
             hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
             height=30,
-            corner_radius=8,
             command=self._clear_threat_feed,
         )
         btn_clear.pack(side="left", padx=4)
@@ -860,50 +674,27 @@ class CanaryShieldApp(ctk.CTk):
         # Subtitle
         sub = ctk.CTkLabel(
             frame,
-            text="Real-time telemetry showing filesystem traversal interception, process attribution, containment freeze, and termination.",
+            text="Real-time telemetry showing filesystem traversal interception, process attribution, sub-second thread freeze, and containment.",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=COLOR_TEXT_MUTED,
         )
         sub.grid(row=1, column=0, sticky="w", pady=(0, 10))
 
-        # Terminal Container Card
-        term_card = ctk.CTkFrame(
-            frame,
-            fg_color=COLOR_TERMINAL_BG,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
-        term_card.grid(row=2, column=0, sticky="nsew")
-        term_card.grid_rowconfigure(1, weight=1)
-        term_card.grid_columnconfigure(0, weight=1)
-
-        # Terminal Header Bar
-        term_header = ctk.CTkFrame(term_card, fg_color=COLOR_CARD_SUBTLE, height=32, corner_radius=0)
-        term_header.grid(row=0, column=0, sticky="ew")
-
-        ctk.CTkLabel(
-            term_header,
-            text="● ● ●  EDR EVENT TELEMETRY STREAM — REAL-TIME MONITORING",
-            font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
-            text_color=COLOR_ACCENT,
-        ).pack(side="left", padx=14, pady=6)
-
         # Console Textbox
         self.feed_textbox = ctk.CTkTextbox(
-            term_card,
-            fg_color=COLOR_TERMINAL_BG,
+            frame,
+            fg_color=COLOR_CARD,
             text_color=COLOR_TEXT_MAIN,
-            font=ctk.CTkFont(family="Consolas", size=11),
+            font=ctk.CTkFont(family="Consolas", size=12),
             wrap="word",
-            corner_radius=0,
+            corner_radius=10,
         )
-        self.feed_textbox.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
+        self.feed_textbox.grid(row=2, column=0, sticky="nsew")
 
         # Configure color tags on underlying Tk Text widget
-        self.feed_textbox._textbox.tag_config("critical", foreground="#f43f5e")
-        self.feed_textbox._textbox.tag_config("warning", foreground="#fbbf24")
-        self.feed_textbox._textbox.tag_config("containment", foreground="#34d399")
+        self.feed_textbox._textbox.tag_config("critical", foreground="#ef4444")
+        self.feed_textbox._textbox.tag_config("warning", foreground="#f59e0b")
+        self.feed_textbox._textbox.tag_config("containment", foreground="#10b981")
         self.feed_textbox._textbox.tag_config("info", foreground="#38bdf8")
 
         # Initial messages
@@ -925,7 +716,7 @@ class CanaryShieldApp(ctk.CTk):
 
         # Header
         header_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 6))
+        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 8))
 
         title = ctk.CTkLabel(
             header_frame,
@@ -942,9 +733,8 @@ class CanaryShieldApp(ctk.CTk):
             btn_box,
             text="Refresh Incidents",
             fg_color=COLOR_ACCENT,
-            hover_color=COLOR_ACCENT_HOVER,
+            hover_color="#0284c7",
             height=32,
-            corner_radius=8,
             command=self._refresh_incidents_list,
         )
         btn_refresh.pack(side="left", padx=4)
@@ -952,12 +742,9 @@ class CanaryShieldApp(ctk.CTk):
         btn_quarantine = ctk.CTkButton(
             btn_box,
             text="Open Quarantine Vault",
-            fg_color=COLOR_CARD_SUBTLE,
-            hover_color=COLOR_CARD_HOVER,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
+            fg_color=COLOR_CARD_HOVER,
+            hover_color="#475569",
             height=32,
-            corner_radius=8,
             command=lambda: os.startfile(QUARANTINE_DIR),
         )
         btn_quarantine.pack(side="left", padx=4)
@@ -969,9 +756,9 @@ class CanaryShieldApp(ctk.CTk):
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=COLOR_TEXT_MUTED,
             justify="left",
-            wraplength=880,
+            wraplength=850,
         )
-        desc.grid(row=1, column=0, sticky="w", pady=(0, 12))
+        desc.grid(row=1, column=0, sticky="w", pady=(0, 14))
 
         # Scrollable Incident Cards List
         self.incidents_scroll = ctk.CTkScrollableFrame(frame, fg_color="transparent")
@@ -1007,13 +794,7 @@ class CanaryShieldApp(ctk.CTk):
             quarantine = inc.get("quarantine", {})
             sha256 = quarantine.get("sha256", "N/A")
 
-            card = ctk.CTkFrame(
-                self.incidents_scroll,
-                fg_color=COLOR_CARD,
-                corner_radius=10,
-                border_width=1,
-                border_color=COLOR_CARD_BORDER,
-            )
+            card = ctk.CTkFrame(self.incidents_scroll, fg_color=COLOR_CARD, corner_radius=10)
             card.pack(fill="x", pady=6)
 
             card_header = ctk.CTkFrame(card, fg_color="transparent")
@@ -1033,10 +814,6 @@ class CanaryShieldApp(ctk.CTk):
                 text=f"{confidence} CONFIDENCE",
                 font=ctk.CTkFont(size=10, weight="bold"),
                 text_color=badge_color,
-                fg_color=COLOR_CARD_SUBTLE,
-                corner_radius=6,
-                padx=8,
-                pady=2,
             )
             conf_badge.pack(side="right")
 
@@ -1070,11 +847,9 @@ class CanaryShieldApp(ctk.CTk):
                 btn_html = ctk.CTkButton(
                     actions_row,
                     text="🌐 Open Visual HTML Report",
-                    font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
                     fg_color=COLOR_ACCENT,
-                    hover_color=COLOR_ACCENT_HOVER,
+                    hover_color="#0284c7",
                     height=28,
-                    corner_radius=6,
                     command=lambda p=html_path: webbrowser.open(f"file:///{p}"),
                 )
                 btn_html.pack(side="left", padx=(0, 8))
@@ -1084,12 +859,9 @@ class CanaryShieldApp(ctk.CTk):
                 btn_json = ctk.CTkButton(
                     actions_row,
                     text="📄 View Telemetry JSON",
-                    fg_color=COLOR_CARD_SUBTLE,
-                    hover_color=COLOR_CARD_HOVER,
-                    border_width=1,
-                    border_color=COLOR_CARD_BORDER,
+                    fg_color=COLOR_CARD_HOVER,
+                    hover_color="#475569",
                     height=28,
-                    corner_radius=6,
                     command=lambda p=json_path: webbrowser.open(f"file:///{p}"),
                 )
                 btn_json.pack(side="left")
@@ -1119,16 +891,10 @@ class CanaryShieldApp(ctk.CTk):
             text_color=COLOR_TEXT_MUTED,
             justify="left",
         )
-        sub.grid(row=1, column=0, sticky="w", pady=(0, 12))
+        sub.grid(row=1, column=0, sticky="w", pady=(0, 14))
 
         # Simulation Configuration Bar
-        ctrl_card = ctk.CTkFrame(
-            frame,
-            fg_color=COLOR_CARD,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        ctrl_card = ctk.CTkFrame(frame, fg_color=COLOR_CARD, corner_radius=10)
         ctrl_card.grid(row=2, column=0, sticky="ew", pady=(0, 14))
 
         ctrl_inner = ctk.CTkFrame(ctrl_card, fg_color="transparent")
@@ -1153,52 +919,29 @@ class CanaryShieldApp(ctk.CTk):
             text="🚀 Launch Attack Simulation",
             font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             fg_color=COLOR_DANGER,
-            hover_color=COLOR_DANGER_HOVER,
-            height=36,
-            corner_radius=8,
+            hover_color="#dc2626",
+            height=34,
             command=self.run_attack_simulation_action,
         )
         self.sim_run_btn.pack(side="right")
 
-        # Simulator Terminal Card
-        term_card = ctk.CTkFrame(
-            frame,
-            fg_color=COLOR_TERMINAL_BG,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
-        term_card.grid(row=3, column=0, sticky="nsew")
-        term_card.grid_rowconfigure(1, weight=1)
-        term_card.grid_columnconfigure(0, weight=1)
-
-        # Simulator Terminal Header
-        term_header = ctk.CTkFrame(term_card, fg_color=COLOR_CARD_SUBTLE, height=32, corner_radius=0)
-        term_header.grid(row=0, column=0, sticky="ew")
-
-        ctk.CTkLabel(
-            term_header,
-            text="● ● ●  SIMULATE_ATTACK.PY — TEST HARNESS SUBPROCESS CONSOLE",
-            font=ctk.CTkFont(family="Consolas", size=11, weight="bold"),
-            text_color=COLOR_ACCENT,
-        ).pack(side="left", padx=14, pady=6)
-
         # Simulator Output Box
         self.sim_console = ctk.CTkTextbox(
-            term_card,
-            fg_color=COLOR_TERMINAL_BG,
+            frame,
+            fg_color=COLOR_CARD,
             text_color=COLOR_TEXT_MAIN,
-            font=ctk.CTkFont(family="Consolas", size=11),
-            corner_radius=0,
+            font=ctk.CTkFont(family="Consolas", size=12),
+            corner_radius=10,
         )
-        self.sim_console.grid(row=1, column=0, sticky="nsew", padx=4, pady=4)
-        self.sim_console.insert("end", "[Simulator Ready] Click 'Launch Attack Simulation' to test live ransomware interception.\n")
+        self.sim_console.grid(row=3, column=0, sticky="nsew")
+        self.sim_console.insert("end", "[Simulator Ready] Click 'Launch Attack Simulation' to test live zero-day interception.\n")
 
         return frame
 
     def run_attack_simulation_action(self):
         """Execute the attack simulator asynchronously and stream output to GUI."""
         if not self.is_armed:
+            # Auto-arm shield before running simulation
             self.arm_shield()
 
         self.sim_run_btn.configure(state="disabled", text="Attacking Sandbox...")
@@ -1252,8 +995,10 @@ class CanaryShieldApp(ctk.CTk):
             except Exception as exc:
                 try:
                     self.after(0, lambda: self._append_sim_output(f"\n[Simulator Error] {exc}\n"))
+    
                 except Exception:
                     pass
+
 
         threading.Thread(target=_run, daemon=True).start()
 
@@ -1271,7 +1016,7 @@ class CanaryShieldApp(ctk.CTk):
         if code != 0:
             self.sim_console.insert("end", f"\n>>> SUCCESS: Attacker Process Intercepted & Terminated! (Exit code: {code}) <<<\n")
             self.dash_threat_detail.configure(
-                text="Threat Contained! Ransomware traversal neutralized.\nSimulator process stopped before genuine user files were touched.",
+                text="Threat Contained! Zero-day traversal neutralized.\nSimulator process killed before genuine user files were encrypted.",
                 text_color=COLOR_SUCCESS,
             )
         else:
@@ -1303,15 +1048,9 @@ class CanaryShieldApp(ctk.CTk):
             font=ctk.CTkFont(family="Segoe UI", size=12),
             text_color=COLOR_TEXT_MUTED,
         )
-        sub.grid(row=1, column=0, sticky="w", pady=(0, 14))
+        sub.grid(row=1, column=0, sticky="w", pady=(0, 16))
 
-        settings_card = ctk.CTkFrame(
-            frame,
-            fg_color=COLOR_CARD,
-            corner_radius=10,
-            border_width=1,
-            border_color=COLOR_CARD_BORDER,
-        )
+        settings_card = ctk.CTkFrame(frame, fg_color=COLOR_CARD, corner_radius=10)
         settings_card.grid(row=2, column=0, sticky="ew")
 
         # Switches
@@ -1338,7 +1077,7 @@ class CanaryShieldApp(ctk.CTk):
 
         self.sw_freeze = ctk.CTkSwitch(
             settings_card,
-            text="Thread Freeze Prior to Termination — Suspend attacker threads prior to termination",
+            text="Instant Thread Freeze — Suspend attacker threads prior to termination",
             font=ctk.CTkFont(size=13),
         )
         if cfg.get("instant_thread_freeze", True):
@@ -1389,9 +1128,8 @@ class CanaryShieldApp(ctk.CTk):
             text="Save Configuration",
             font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
             fg_color=COLOR_ACCENT,
-            hover_color=COLOR_ACCENT_HOVER,
+            hover_color="#0284c7",
             height=36,
-            corner_radius=8,
             command=self._save_settings_action,
         )
         btn_save.grid(row=3, column=0, sticky="e", pady=16)
@@ -1431,7 +1169,7 @@ class CanaryShieldApp(ctk.CTk):
                 json.dump(cfg, f, indent=2)
             self.log_queue.put(("INFO", "Configuration successfully saved to canary_shield_config.json"))
             self.sidebar_mode_badge.configure(
-                text=f"● {'TEST SANDBOX' if cfg['mode'] == 'test' else 'PRODUCTION'}",
+                text=f"MODE: {'TEST SANDBOX' if cfg['mode'] == 'test' else 'PRODUCTION'}",
                 text_color=COLOR_WARNING if cfg["mode"] == "test" else COLOR_ACCENT,
             )
         except Exception as exc:
@@ -1483,16 +1221,12 @@ class CanaryShieldApp(ctk.CTk):
 
     def _on_shield_armed(self):
         self.dash_status_badge.configure(text="● ACTIVE SHIELD PROTECTING — ENDPOINTS ARMED", text_color=COLOR_SUCCESS)
-        self.dash_arm_button.configure(text="DISARM SHIELD", fg_color=COLOR_DANGER, hover_color=COLOR_DANGER_HOVER)
+        self.dash_arm_button.configure(text="DISARM SHIELD", fg_color=COLOR_DANGER, hover_color="#dc2626")
         self.sidebar_shield_badge.configure(text="● SHIELD ARMED", text_color=COLOR_SUCCESS)
         self.metric_decoys["value_label"].configure(text=f"{len(self.active_canaries)} Active")
         self.dash_threat_detail.configure(
             text="System Protected — Watching file traversals in real-time.\nAll tripwires active. No unauthorized tampering detected.",
             text_color=COLOR_TEXT_MAIN,
-        )
-        self.lbl_telemetry_engine.configure(
-            text="• Filesystem Watchdog: Active (Native ReadDirectoryChangesW)",
-            text_color=COLOR_SUCCESS,
         )
         self.log_queue.put(("INFO", f"Canary Shield successfully ARMED. {len(self.active_canaries)} tripwires active."))
 
@@ -1525,17 +1259,13 @@ class CanaryShieldApp(ctk.CTk):
 
     def _on_shield_disarmed(self):
         self.dash_status_badge.configure(text="○ SHIELD DISARMED — PROTECTION STANDBY", text_color=COLOR_TEXT_MUTED)
-        self.dash_arm_button.configure(text="ARM SHIELD", fg_color=COLOR_SUCCESS, hover_color=COLOR_SUCCESS_HOVER)
-        self.sidebar_shield_badge.configure(text="○ SHIELD DISARMED", text_color=COLOR_TEXT_MUTED)
+        self.dash_arm_button.configure(text="ARM SHIELD", fg_color=COLOR_SUCCESS, hover_color="#059669")
+        self.sidebar_shield_badge.configure(text="● SHIELD DISARMED", text_color=COLOR_TEXT_MUTED)
         manifest_count = len(load_decoy_manifest())
         self.metric_decoys["value_label"].configure(text=f"{manifest_count} Present")
         self.dash_threat_detail.configure(
-            text="Standby — shield is disarmed. Press ARM SHIELD to deploy active filesystem monitoring.",
+            text="Standby - shield is disarmed. Press ARM SHIELD to deploy monitoring.",
             text_color=COLOR_TEXT_MUTED,
-        )
-        self.lbl_telemetry_engine.configure(
-            text="• Filesystem Watchdog: Inactive (Armed upon start)",
-            text_color=COLOR_TEXT_DIM,
         )
         self.log_queue.put(("INFO", "Canary Shield DISARMED."))
 
@@ -1722,6 +1452,7 @@ def request_admin_elevation() -> bool:
             os.getcwd(),
             1  # SW_SHOWNORMAL
         )
+        # ShellExecute returns > 32 on success (HINSTANCE)
         if int(ret) > 32:
             sys.exit(0)
     except Exception as exc:
@@ -1733,6 +1464,7 @@ def request_admin_elevation() -> bool:
 def main():
     """Launch the Canary Shield Desktop Application or hidden subcommands."""
     if "--run-simulator" in sys.argv:
+        # Hidden command-line mode for frozen executable or subprocess invocation
         sim_args = [a for a in sys.argv[1:] if a != "--run-simulator"]
         import simulate_attack
         simulate_attack.main(sim_args)
