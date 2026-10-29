@@ -1,8 +1,17 @@
+"""
+Canary Shield — In-App Presentation Slideshow View.
+Light, soft watercolor minimalist theme inspired by pastel lavender palettes.
+"""
+
 import os
 import sys
+import time
+import random
 import tkinter as tk
+import tkinter.font as tkfont
 import customtkinter as ctk
-from typing import Optional, Dict, Any, List
+from PIL import Image, ImageDraw, ImageFilter, ImageTk
+from typing import Optional, Dict, Any, List, Tuple
 
 # =========================================================================
 # CONFIGURATION & CONSTANTS
@@ -17,21 +26,20 @@ def resource_path(relative_path: str) -> str:
         base_path = os.path.abspath(os.path.dirname(__file__))
     return os.path.join(base_path, relative_path)
 
-# Theme color palette matching Canary Shield UI
-COLOR_BG = "#0b1120"
-COLOR_HEADER = "#0f172a"
-COLOR_CARD = "#1e293b"
-COLOR_CARD_BORDER = "#334155"
-COLOR_ACCENT = "#38bdf8"
-COLOR_ACCENT_HOVER = "#0284c7"
-COLOR_YELLOW = "#facc15"
-COLOR_GREEN = "#10b981"
-COLOR_RED = "#f87171"
-COLOR_TEXT_MAIN = "#f8fafc"
-COLOR_TEXT_MUTED = "#94a3b8"
+# Palette (Strictly restricted to requested watercolor minimalist lavender theme)
+COLOR_BG = "#FBF4FF"          # pale pink-lavender
+COLOR_CARD = "#FFFFFF"        # pure white card surface
+COLOR_BLOB_SOFT = "#E6D8F5"   # soft lilac blob
+COLOR_BLOB_MID = "#CDB6EA"    # mid lilac
+COLOR_PLUM = "#6B3FA0"        # deep plum accent
+COLOR_TEXT_DARK = "#241B2F"   # dark text (contrast ratio > 15:1)
+COLOR_TEXT_MUTED = "#6B5F7A"  # muted text (contrast ratio > 5.5:1)
+COLOR_HAIRLINE = "#3A2D4A"    # hairline and progress dots
+COLOR_CORAL = "#E5566D"       # soft coral (ONLY for containment & 1s goal line)
+COLOR_CANARY = "#F2B705"      # canary yellow (logo & tiny dot accents)
 
 # =========================================================================
-# SLIDES DATA STRUCTURE (Edit slide text directly here)
+# SLIDES DATA STRUCTURE (Exact wording and numbers preserved)
 # =========================================================================
 SLIDES: List[Dict[str, Any]] = [
     {
@@ -78,6 +86,7 @@ SLIDES: List[Dict[str, Any]] = [
                 "goal": "stop a simulated ransomware process in under 1 second.",
                 "measure": "time from tripwire to termination over 5 consecutive test runs.",
                 "result": "median about 260 ms, worst run about 950 ms.",
+                "hero": "260 ms",
                 "deadline": "Deadline: prototype submission",
             },
             {
@@ -86,6 +95,7 @@ SLIDES: List[Dict[str, Any]] = [
                 "goal": "lose no genuine user files.",
                 "measure": "user files surviving in each of 5 test runs.",
                 "result": "5 of 5 files survived in 5 of 5 runs.",
+                "hero": "5 of 5",
                 "deadline": "Deadline: prototype submission",
             },
             {
@@ -94,6 +104,7 @@ SLIDES: List[Dict[str, Any]] = [
                 "goal": "a forensic report for every contained incident.",
                 "measure": "reports (JSON and HTML with SHA-256) generated per incident.",
                 "result": "one report per incident in every run.",
+                "hero": "1 per inc.",
                 "deadline": "Deadline: prototype submission",
             },
         ],
@@ -118,9 +129,66 @@ SLIDES: List[Dict[str, Any]] = [
     },
 ]
 
+def hex_to_rgb(h: str) -> Tuple[int, int, int]:
+    """Convert hex color string to integer RGB tuple."""
+    h = h.lstrip("#")
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+def make_watercolor(w: int, h: int, base_color: str = COLOR_BLOB_SOFT, seed: int = 42) -> Image.Image:
+    """
+    Generate soft watercolor blob texture using Pillow.
+    Overlapping ellipses with varied alpha, GaussianBlur, and subtle pigment edge,
+    rendered at half resolution then upscaled with LANCZOS.
+    """
+    rng = random.Random(seed)
+    hw = max(60, int(w / 2))
+    hh = max(60, int(h / 2))
+
+    layer = Image.new("RGBA", (hw, hh), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
+
+    base_rgb = hex_to_rgb(base_color)
+    dark_edge_rgb = (max(0, base_rgb[0] - 25), max(0, base_rgb[1] - 25), max(0, base_rgb[2] - 25))
+
+    cx, cy = hw / 2, hh / 2
+    rx_base, ry_base = hw * 0.42, hh * 0.42
+
+    # 8-10 overlapping soft watercolor washes
+    for _ in range(8):
+        ox = rng.uniform(-0.16, 0.16) * hw
+        oy = rng.uniform(-0.16, 0.16) * hh
+        rx = rx_base * rng.uniform(0.70, 1.25)
+        ry = ry_base * rng.uniform(0.70, 1.25)
+        alpha = int(rng.uniform(30, 65))
+        draw.ellipse([cx + ox - rx, cy + oy - ry, cx + ox + rx, cy + oy + ry], fill=(*base_rgb, alpha))
+
+    blur_rad = max(2, int(min(hw, hh) * 0.035))
+    layer = layer.filter(ImageFilter.GaussianBlur(blur_rad))
+
+    # Pigment edge layer for authentic watercolor look
+    edge_layer = Image.new("RGBA", (hw, hh), (0, 0, 0, 0))
+    edraw = ImageDraw.Draw(edge_layer)
+    for _ in range(4):
+        ox = rng.uniform(-0.18, 0.18) * hw
+        oy = rng.uniform(-0.18, 0.18) * hh
+        rx = rx_base * rng.uniform(0.85, 1.15)
+        ry = ry_base * rng.uniform(0.85, 1.15)
+        edraw.ellipse([cx + ox - rx, cy + oy - ry, cx + ox + rx, cy + oy + ry], outline=(*dark_edge_rgb, 45), width=max(1, int(min(hw, hh) * 0.025)))
+
+    edge_layer = edge_layer.filter(ImageFilter.GaussianBlur(blur_rad))
+    layer = Image.alpha_composite(layer, edge_layer)
+
+    # Composite onto solid background
+    bg_rgb = hex_to_rgb(COLOR_BG)
+    final_canvas = Image.new("RGB", (hw, hh), bg_rgb)
+    final_canvas.paste(layer, (0, 0), layer)
+
+    # Upscale to full resolution
+    return final_canvas.resize((w, h), Image.Resampling.LANCZOS)
+
 
 class PresentationWindow(ctk.CTkToplevel):
-    """Full-screen in-app presentation window with projector-readable slides."""
+    """Full-screen in-app presentation window with light watercolor theme."""
 
     def __init__(self, master=None):
         super().__init__(master)
@@ -130,32 +198,67 @@ class PresentationWindow(ctk.CTkToplevel):
 
         self.current_index = 0
         self.is_fullscreen = False
-        self._last_dims = (0, 0)
-        self._resize_scheduled = False
+        self._image_cache: Dict[str, Any] = {}
+        self._resize_after_id: Optional[str] = None
+        self._last_rendered_dims: Tuple[int, int] = (0, 0)
+        self.last_render_time_ms: float = 0.0
 
-        # Set window icon after 250ms (CTkToplevel overrides iconbitmap)
+        # Discover system typography
+        self._setup_fonts()
+
+        # Load application logo if available
+        self._load_logo()
+
+        # Window icon
         self.after(250, self._set_icon)
 
-        # Initial geometry: clamped to screen, start maximized / zoomed
+        # Clamped initial window geometry (fits within usable screen)
         self._init_window_geometry()
 
-        # Keyboard bindings
+        # Setup keyboard shortcuts
         self._bind_keys()
 
-        # Window close handler
+        # Window protocol
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        # Construct basic scaffolding
+        # Build UI layout (Canvas slide area + fixed-height footer)
         self._build_ui()
 
         # Bring window to front
         self.focus_window()
 
-        # Render initial slide
-        self._render_current_slide()
+        # Initial render
+        self.after(50, self._render_current_slide)
 
-        # Listen to resize events
+        # Debounced resize listener
         self.bind("<Configure>", self._on_window_configure)
+
+    def _setup_fonts(self):
+        """Pick available fonts: Serif titles, clean sans body, and monospaced labels."""
+        try:
+            available = set(tkfont.families())
+        except Exception:
+            available = set()
+
+        # Pick serif for titles
+        serif_prefs = ["Bodoni MT", "Didot", "Palatino Linotype", "Georgia"]
+        self.font_serif = next((f for f in serif_prefs if f in available), "Georgia")
+
+        # Pick sans for body
+        body_prefs = ["Segoe UI", "Poppins", "Arial"]
+        self.font_body = next((f for f in body_prefs if f in available), "Segoe UI")
+
+        self.font_mono = "Consolas" if "Consolas" in available else "Courier New"
+
+    def _load_logo(self):
+        """Load logo image for Slide 1."""
+        self.logo_pil = None
+        png_path = resource_path(os.path.join("assets", "canary_shield.png"))
+        if os.path.exists(png_path):
+            try:
+                self.logo_pil = Image.open(png_path).convert("RGBA")
+            except Exception:
+                pass
 
     def _set_icon(self):
         """Set window icon from resource path."""
@@ -167,20 +270,20 @@ class PresentationWindow(ctk.CTkToplevel):
             pass
 
     def _init_window_geometry(self):
-        """Set initial geometry clamped to screen bounds, start zoomed/maximized."""
+        """Set geometry clamped to usable screen height (minus taskbar)."""
         try:
             sw = self.winfo_screenwidth()
             sh = self.winfo_screenheight()
-            w = max(1024, min(1600, sw - 80))
-            h = max(600, min(900, sh - 80))
-            self.geometry(f"{w}x{h}+40+20")
+            usable_w = max(1024, min(1400, sw - 60))
+            usable_h = max(600, min(860, sh - 60))
+            self.geometry(f"{usable_w}x{usable_h}+30+15")
             self.minsize(1024, 600)
             self.state("zoomed")
         except Exception:
-            self.geometry("1280x720+40+20")
+            self.geometry("1280x720+30+15")
 
     def _bind_keys(self):
-        """Bind presentation control hotkeys."""
+        """Bind keyboard presentation controls."""
         self.bind("<Right>", lambda e: self.next_slide())
         self.bind("<space>", lambda e: self.next_slide())
         self.bind("<Next>", lambda e: self.next_slide())      # Page Down
@@ -194,24 +297,24 @@ class PresentationWindow(ctk.CTkToplevel):
         self.bind("<Escape>", self.handle_escape)
 
     def focus_window(self):
-        """Bring window to front reliably on Windows."""
+        """Bring window to front on Windows."""
         try:
             self.deiconify()
             self.lift()
             self.attributes("-topmost", True)
-            self.after(50, lambda: self.attributes("-topmost", False))
+            self.after(60, lambda: self.attributes("-topmost", False))
             self.focus_force()
         except Exception:
             pass
 
     def toggle_fullscreen(self, event=None):
-        """Toggle fullscreen mode."""
+        """Toggle fullscreen state."""
         self.is_fullscreen = not self.is_fullscreen
         self.attributes("-fullscreen", self.is_fullscreen)
         self.after(50, self._render_current_slide)
 
     def handle_escape(self, event=None):
-        """Escape leaves fullscreen, or closes window if not in fullscreen."""
+        """Escape exits fullscreen, or closes window if already windowed."""
         if self.is_fullscreen:
             self.is_fullscreen = False
             self.attributes("-fullscreen", False)
@@ -220,7 +323,16 @@ class PresentationWindow(ctk.CTkToplevel):
             self._on_close()
 
     def _on_close(self):
-        """Safely destroy presentation window and reset parent reference."""
+        """Safely destroy presentation window and release cached images."""
+        try:
+            if self._resize_after_id:
+                self.after_cancel(self._resize_after_id)
+                self._resize_after_id = None
+        except Exception:
+            pass
+
+        self._image_cache.clear()
+
         try:
             if self.master_app and hasattr(self.master_app, "presentation_window"):
                 self.master_app.presentation_window = None
@@ -229,126 +341,152 @@ class PresentationWindow(ctk.CTkToplevel):
         self.destroy()
 
     def _build_ui(self):
-        """Create main layout frames."""
+        """Build main layout with grid: row 0 weight 1 (slide canvas), row 1 fixed height (footer)."""
         self.grid_rowconfigure(0, weight=1)
         self.grid_rowconfigure(1, weight=0)
         self.grid_columnconfigure(0, weight=1)
 
-        # Slide content area
-        self.slide_container = ctk.CTkFrame(self, fg_color="transparent", corner_radius=0)
-        self.slide_container.grid(row=0, column=0, sticky="nsew", padx=24, pady=(16, 8))
-
-        # Bottom control bar
-        self.nav_bar = ctk.CTkFrame(self, fg_color=COLOR_HEADER, height=54, corner_radius=0)
-        self.nav_bar.grid(row=1, column=0, sticky="ew")
-        self.nav_bar.grid_columnconfigure(1, weight=1)
-
-        # Prev button
-        self.btn_prev = ctk.CTkButton(
-            self.nav_bar,
-            text="◀ Prev",
-            width=90,
-            height=34,
-            fg_color=COLOR_CARD,
-            hover_color=COLOR_CARD_BORDER,
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            command=self.prev_slide,
+        # 1. Slide Canvas (fills row 0 completely)
+        self.canvas = tk.Canvas(
+            self,
+            bg=COLOR_BG,
+            highlightthickness=0,
+            bd=0,
         )
-        self.btn_prev.pack(side="left", padx=20, pady=10)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
-        # Dots container
-        self.dots_frame = ctk.CTkFrame(self.nav_bar, fg_color="transparent")
-        self.dots_frame.pack(side="left", padx=10, pady=10)
+        # 2. Fixed-height Footer Frame (row 1, guaranteed visible)
+        self.footer_frame = ctk.CTkFrame(
+            self,
+            fg_color=COLOR_BG,
+            height=54,
+            corner_radius=0,
+            border_width=1,
+            border_color=COLOR_BLOB_SOFT,
+        )
+        self.footer_frame.grid(row=1, column=0, sticky="ew")
+        self.footer_frame.grid_propagate(False)
 
-        self.dot_indicators = []
+        # Left: 6-dot progress indicator (current filled plum, others hollow)
+        self.dots_container = ctk.CTkFrame(self.footer_frame, fg_color="transparent")
+        self.dots_container.pack(side="left", padx=(28, 16), pady=12)
+
+        self.dot_buttons = []
         for i in range(len(SLIDES)):
             dot = ctk.CTkButton(
-                self.dots_frame,
+                self.dots_container,
                 text="",
-                width=12,
-                height=12,
-                corner_radius=6,
-                fg_color=COLOR_CARD_BORDER,
-                hover_color=COLOR_ACCENT,
+                width=10,
+                height=10,
+                corner_radius=5,
+                fg_color="transparent",
+                border_width=2,
+                border_color=COLOR_HAIRLINE,
+                hover_color=COLOR_BLOB_MID,
                 command=lambda idx=i: self.go_to_slide(idx),
             )
             dot.pack(side="left", padx=4)
-            self.dot_indicators.append(dot)
+            self.dot_buttons.append(dot)
 
-        # Slide counter
-        self.counter_label = ctk.CTkLabel(
-            self.nav_bar,
+        # Slide counter label: "n / 6"
+        self.counter_lbl = ctk.CTkLabel(
+            self.footer_frame,
             text="1 / 6",
-            font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
-            text_color=COLOR_TEXT_MUTED,
+            font=ctk.CTkFont(family=self.font_serif, size=15, weight="bold"),
+            text_color=COLOR_TEXT_DARK,
         )
-        self.counter_label.pack(side="left", padx=15)
+        self.counter_lbl.pack(side="left", padx=(10, 20))
 
-        # Next button
-        self.btn_next = ctk.CTkButton(
-            self.nav_bar,
-            text="Next ▶",
-            width=90,
+        # Center: Prev & Next buttons styled as soft lavender and plum pills
+        controls_box = ctk.CTkFrame(self.footer_frame, fg_color="transparent")
+        controls_box.pack(side="left", padx=10)
+
+        self.btn_prev = ctk.CTkButton(
+            controls_box,
+            text="◀ Prev",
+            width=88,
             height=34,
-            fg_color=COLOR_ACCENT,
-            hover_color=COLOR_ACCENT_HOVER,
-            text_color="#0f172a",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            corner_radius=17,
+            fg_color=COLOR_CARD,
+            hover_color=COLOR_BLOB_SOFT,
+            border_width=1,
+            border_color=COLOR_BLOB_MID,
+            text_color=COLOR_TEXT_DARK,
+            font=ctk.CTkFont(family=self.font_body, size=13, weight="bold"),
+            command=self.prev_slide,
+        )
+        self.btn_prev.pack(side="left", padx=5)
+
+        self.btn_next = ctk.CTkButton(
+            controls_box,
+            text="Next ▶",
+            width=88,
+            height=34,
+            corner_radius=17,
+            fg_color=COLOR_PLUM,
+            hover_color="#532d80",
+            text_color="#FFFFFF",
+            font=ctk.CTkFont(family=self.font_body, size=13, weight="bold"),
             command=self.next_slide,
         )
-        self.btn_next.pack(side="left", padx=10, pady=10)
+        self.btn_next.pack(side="left", padx=5)
 
-        # Optional Live Demo button on last slide
+        # Live Demo button on last slide
         self.btn_demo = ctk.CTkButton(
-            self.nav_bar,
+            controls_box,
             text="🚀 Live Demo",
-            width=110,
+            width=124,
             height=34,
-            fg_color=COLOR_GREEN,
-            hover_color="#059669",
-            text_color="#ffffff",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            corner_radius=17,
+            fg_color=COLOR_PLUM,
+            hover_color="#532d80",
+            text_color="#FFFFFF",
+            font=ctk.CTkFont(family=self.font_body, size=13, weight="bold"),
             command=self.launch_live_demo,
         )
 
-        # Fullscreen hint on right
-        self.hint_label = ctk.CTkLabel(
-            self.nav_bar,
-            text="F11: Fullscreen | Esc: Close",
-            font=ctk.CTkFont(family="Segoe UI", size=12),
+        # Right: Keyboard shortcut hint
+        hint_lbl = ctk.CTkLabel(
+            self.footer_frame,
+            text="F11: Fullscreen  |  Esc: Close",
+            font=ctk.CTkFont(family=self.font_body, size=11),
             text_color=COLOR_TEXT_MUTED,
         )
-        self.hint_label.pack(side="right", padx=20)
+        hint_lbl.pack(side="right", padx=28)
 
     def _on_window_configure(self, event):
-        """Handle window resize without repeating timers or background threads."""
+        """Debounced window resize handler (one-shot after call)."""
         if event.widget != self:
             return
-        w, h = event.width, event.height
-        if abs(w - self._last_dims[0]) > 25 or abs(h - self._last_dims[1]) > 25:
-            self._last_dims = (w, h)
-            self._render_current_slide()
+        if self._resize_after_id:
+            self.after_cancel(self._resize_after_id)
+        self._resize_after_id = self.after(60, self._handle_debounced_resize)
+
+    def _handle_debounced_resize(self):
+        """Execute resize render once geometry settles."""
+        self._resize_after_id = None
+        self._render_current_slide()
 
     def go_to_slide(self, index: int):
-        """Jump to specific slide index."""
+        """Jump to slide by index."""
         if 0 <= index < len(SLIDES):
             self.current_index = index
             self._render_current_slide()
 
     def next_slide(self):
-        """Advance to next slide."""
+        """Next slide."""
         if self.current_index < len(SLIDES) - 1:
             self.current_index += 1
             self._render_current_slide()
 
     def prev_slide(self):
-        """Go back to previous slide."""
+        """Previous slide."""
         if self.current_index > 0:
             self.current_index -= 1
             self._render_current_slide()
 
     def launch_live_demo(self):
-        """Close presentation and switch main app to Attack Simulator view."""
+        """Close slideshow and switch to Attack Simulator."""
         self._on_close()
         try:
             if self.master_app and hasattr(self.master_app, "switch_view"):
@@ -356,631 +494,701 @@ class PresentationWindow(ctk.CTkToplevel):
         except Exception:
             pass
 
-    def _calc_font_sizes(self):
-        """Calculate projector-readable font sizes scaled with height, never below minimums."""
-        h = max(600, self.winfo_height())
-        # Enforce strict minimums: title >= 40 pt, body >= 22 pt
-        title_pt = max(40, int(h * 0.048))
-        body_pt = max(22, int(h * 0.024))
-        sub_pt = max(24, int(h * 0.028))
-        small_pt = max(16, int(h * 0.018))
-        return title_pt, body_pt, sub_pt, small_pt
+    # =========================================================================
+    # CANVAS PRIMITIVE HELPERS
+    # =========================================================================
+    def _draw_pill(self, x1: float, y1: float, x2: float, y2: float, fill: str, outline: str = "", width: int = 1):
+        """Draw rounded pill shape on canvas."""
+        h = max(2.0, y2 - y1)
+        r = h / 2.0
+        if (x2 - x1) <= h:
+            return self.canvas.create_oval(x1, y1, x2, y2, fill=fill, outline=outline, width=width)
+        o1 = self.canvas.create_oval(x1, y1, x1 + h, y2, fill=fill, outline=outline, width=width)
+        o2 = self.canvas.create_oval(x2 - h, y1, x2, y2, fill=fill, outline=outline, width=width)
+        r1 = self.canvas.create_rectangle(x1 + r, y1, x2 - r, y2, fill=fill, outline=outline, width=width)
+        if fill:
+            self.canvas.create_rectangle(x1 + r, y1 + width, x2 - r, y2 - width, fill=fill, outline=fill)
+        return r1
 
+    def _draw_card(self, x1: float, y1: float, x2: float, y2: float, radius: float = 14, fill: str = COLOR_CARD, outline: str = COLOR_BLOB_MID, width: int = 1):
+        """Draw smooth rounded card on canvas."""
+        r = max(2.0, min(radius, (x2 - x1) / 2.0, (y2 - y1) / 2.0))
+        pts = [
+            x1 + r, y1,
+            x2 - r, y1,
+            x2, y1,
+            x2, y1 + r,
+            x2, y2 - r,
+            x2, y2,
+            x2 - r, y2,
+            x1 + r, y2,
+            x1, y2,
+            x1, y2 - r,
+            x1, y1 + r,
+            x1, y1,
+        ]
+        return self.canvas.create_polygon(pts, smooth=True, fill=fill, outline=outline, width=width)
+
+    def _draw_dot_grid(self, x_start: float, y_start: float, cols: int = 5, rows: int = 4, spacing: float = 16, dot_color: str = COLOR_HAIRLINE):
+        """Draw small decorative dot-grid motif."""
+        for c in range(cols):
+            for r in range(rows):
+                cx = x_start + (c * spacing)
+                cy = y_start + (r * spacing)
+                self.canvas.create_oval(cx - 1.5, cy - 1.5, cx + 1.5, cy + 1.5, fill=dot_color, outline="")
+
+    def _draw_arrow_doodle(self, x: float, y: float, size: float = 24, color: str = COLOR_PLUM):
+        """Draw hand-drawn curved arrow doodle motif next to headers."""
+        self.canvas.create_arc(
+            x, y, x + (size * 1.4), y + (size * 0.9),
+            start=45, extent=170, style="arc", outline=color, width=2
+        )
+        tip_x = x + (size * 1.35)
+        tip_y = y + (size * 0.45)
+        self.canvas.create_line(tip_x, tip_y, tip_x - 7, tip_y - 2, fill=color, width=2)
+        self.canvas.create_line(tip_x, tip_y, tip_x - 4, tip_y + 7, fill=color, width=2)
+
+    def _draw_paper_plane_path(self, x1: float, y1: float, x2: float, y2: float):
+        """Draw dashed looping flight path with a tiny paper plane."""
+        dx = x2 - x1
+        ctrl_x1 = x1 + dx * 0.35
+        ctrl_y1 = max(10, y1 - 25)
+        ctrl_x2 = x1 + dx * 0.65
+        ctrl_y2 = max(10, y2 - 20)
+        pts = [x1, y1, ctrl_x1, ctrl_y1, ctrl_x1 + 20, ctrl_y1 + 25, ctrl_x2 - 20, ctrl_y2 - 25, ctrl_x2, ctrl_y2, x2, y2]
+        self.canvas.create_line(pts, smooth=True, fill=COLOR_BLOB_MID, width=2, dash=(6, 4))
+
+        plane_pts = [
+            x2, y2,
+            x2 - 16, y2 - 8,
+            x2 - 11, y2,
+            x2 - 16, y2 + 8,
+        ]
+        self.canvas.create_polygon(plane_pts, fill=COLOR_PLUM, outline=COLOR_TEXT_DARK, width=1)
+        self.canvas.create_line(x2, y2, x2 - 11, y2, fill=COLOR_BG, width=1)
+
+    # =========================================================================
+    # SLIDE RENDERING PIPELINE
+    # =========================================================================
     def _render_current_slide(self):
-        """Clear and redraw active slide."""
-        # Update counter & progress dots
-        self.counter_label.configure(text=f"{self.current_index + 1} / {len(SLIDES)}")
-        for i, dot in enumerate(self.dot_indicators):
-            if i == self.current_index:
-                dot.configure(fg_color=COLOR_ACCENT)
-            else:
-                dot.configure(fg_color=COLOR_CARD_BORDER)
+        """Paint active slide with watercolor background and canvas primitives."""
+        t0 = time.perf_counter()
 
-        # Update Prev/Next button states
+        cw = max(900, self.canvas.winfo_width())
+        ch = max(500, self.canvas.winfo_height())
+
+        # Update footer progress dots and slide counter
+        self.counter_lbl.configure(text=f"{self.current_index + 1} / {len(SLIDES)}")
+        for i, dot in enumerate(self.dot_buttons):
+            if i == self.current_index:
+                dot.configure(fg_color=COLOR_PLUM, border_color=COLOR_PLUM)
+            else:
+                dot.configure(fg_color="transparent", border_color=COLOR_HAIRLINE)
+
+        # Update button states
         self.btn_prev.configure(state="normal" if self.current_index > 0 else "disabled")
         if self.current_index == len(SLIDES) - 1:
-            self.btn_next.configure(state="disabled")
+            self.btn_next.pack_forget()
             if not self.btn_demo.winfo_ismapped():
-                self.btn_demo.pack(side="left", padx=10, pady=10)
+                self.btn_demo.pack(side="left", padx=5)
         else:
-            self.btn_next.configure(state="normal")
             if self.btn_demo.winfo_ismapped():
                 self.btn_demo.pack_forget()
+            if not self.btn_next.winfo_ismapped():
+                self.btn_next.pack(side="left", padx=5)
+            self.btn_next.configure(state="normal")
 
-        # Clear container
-        for widget in self.slide_container.winfo_children():
-            widget.destroy()
+        # Clear canvas
+        self.canvas.delete("all")
+
+        # 1. Background Watercolor Texture
+        cache_key = f"bg_{self.current_index}_{cw}_{ch}"
+        if cache_key not in self._image_cache:
+            blob_seed = 100 + (self.current_index * 37)
+            pil_bg = make_watercolor(cw, ch, base_color=COLOR_BLOB_SOFT, seed=blob_seed)
+            self._image_cache[cache_key] = ImageTk.PhotoImage(pil_bg)
+
+        self.canvas.create_image(0, 0, image=self._image_cache[cache_key], anchor="nw")
+
+        # 2. Top-Right Decorative Dot-Grid
+        self._draw_dot_grid(cw - 110, 24, cols=5, rows=4, spacing=14)
+
+        # Responsive font scaling (guaranteed >= minimums)
+        title_pt = max(44, int(ch * 0.052))
+        body_pt = max(24, int(ch * 0.028))
+        hero_pt = max(80, min(120, int(ch * 0.11)))
 
         slide_data = SLIDES[self.current_index]
         slide_type = slide_data.get("type")
 
-        w = max(1024, self.winfo_width())
-        wrap_width = max(600, w - 120)
-        title_pt, body_pt, sub_pt, small_pt = self._calc_font_sizes()
-
+        # Render specific slide content
         if slide_type == "title":
-            self._render_title_slide(slide_data, wrap_width, title_pt, body_pt, sub_pt)
+            self._render_title(slide_data, cw, ch, title_pt, body_pt)
         elif slide_type == "problem":
-            self._render_problem_slide(slide_data, wrap_width, title_pt, body_pt, sub_pt)
+            self._render_problem(slide_data, cw, ch, title_pt, body_pt)
         elif slide_type == "solution":
-            self._render_solution_slide(slide_data, wrap_width, title_pt, body_pt, sub_pt)
+            self._render_solution(slide_data, cw, ch, title_pt, body_pt)
         elif slide_type == "objectives":
-            self._render_objectives_slide(slide_data, wrap_width, title_pt, body_pt, sub_pt, small_pt)
+            self._render_objectives(slide_data, cw, ch, title_pt, body_pt, hero_pt)
         elif slide_type == "architecture":
-            self._render_architecture_slide(slide_data, title_pt)
+            self._render_architecture(slide_data, cw, ch, title_pt)
         elif slide_type == "milestones":
-            self._render_milestones_slide(slide_data, wrap_width, title_pt, body_pt, sub_pt)
+            self._render_milestones(slide_data, cw, ch, title_pt, body_pt)
+
+        self.last_render_time_ms = (time.perf_counter() - t0) * 1000.0
 
     # ---------------------------------------------------------------------
-    # SLIDE 1: TITLE
+    # SLIDE 1: TITLE SLIDE
     # ---------------------------------------------------------------------
-    def _render_title_slide(self, data, wrap_w, title_pt, body_pt, sub_pt):
-        center_frame = ctk.CTkFrame(self.slide_container, fg_color="transparent")
-        center_frame.pack(expand=True, fill="both")
+    def _render_title(self, data: Dict[str, Any], w: int, h: int, title_pt: int, body_pt: int):
+        cx, cy = w / 2, h / 2
 
-        inner = ctk.CTkFrame(center_frame, fg_color=COLOR_CARD, corner_radius=16, border_width=1, border_color=COLOR_CARD_BORDER)
-        inner.pack(expand=True, padx=40, pady=30, fill="both")
+        # Flight path with paper plane motif
+        self._draw_paper_plane_path(w * 0.10, h * 0.84, w * 0.90, h * 0.18)
 
-        # Shield icon banner
-        lbl_icon = ctk.CTkLabel(
-            inner,
-            text="🛡️",
-            font=ctk.CTkFont(size=int(title_pt * 1.4)),
+        # Logo above title
+        logo_y = cy - (title_pt * 1.5)
+        if self.logo_pil is not None:
+            logo_key = f"logo_{w}_{h}"
+            if logo_key not in self._image_cache:
+                resized = self.logo_pil.resize((48, 48), Image.Resampling.LANCZOS)
+                self._image_cache[logo_key] = ImageTk.PhotoImage(resized)
+            self.canvas.create_image(cx, logo_y, image=self._image_cache[logo_key])
+        else:
+            self.canvas.create_oval(cx - 20, logo_y - 20, cx + 20, logo_y + 20, fill=COLOR_CANARY, outline=COLOR_PLUM, width=2)
+            self.canvas.create_text(cx, logo_y, text="🛡️", font=(self.font_body, 16))
+
+        # Main Title (Capital letters, serif, letter-spaced)
+        title_text = "C A N A R Y   S H I E L D"
+        self.canvas.create_text(
+            cx, cy - 20,
+            text=title_text,
+            font=(self.font_serif, int(title_pt * 1.25), "bold"),
+            fill=COLOR_TEXT_DARK,
+            justify="center",
         )
-        lbl_icon.pack(pady=(40, 10))
 
-        # Title: "Canary Shield"
-        lbl_title = ctk.CTkLabel(
-            inner,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=int(title_pt * 1.3), weight="bold"),
-            text_color=COLOR_ACCENT,
-        )
-        lbl_title.pack(pady=(0, 10))
-
-        # Subtitle: "Deception-based ransomware defense for Windows"
-        lbl_sub = ctk.CTkLabel(
-            inner,
+        # Subtitle under title
+        self.canvas.create_text(
+            cx, cy + 46,
             text=data["subtitle"],
-            font=ctk.CTkFont(family="Segoe UI", size=sub_pt),
-            text_color=COLOR_TEXT_MAIN,
-            wraplength=wrap_w - 100,
+            font=(self.font_body, body_pt),
+            fill=COLOR_TEXT_MUTED,
+            justify="center",
         )
-        lbl_sub.pack(pady=(0, 30))
 
-        # Footer strip
-        footer_frame = ctk.CTkFrame(inner, fg_color="transparent")
-        footer_frame.pack(side="bottom", fill="x", padx=40, pady=25)
-
-        lbl_footer_left = ctk.CTkLabel(
-            footer_frame,
-            text=f"Presenter: {data['footer_left']}",
-            font=ctk.CTkFont(family="Segoe UI", size=body_pt, weight="bold"),
-            text_color=COLOR_YELLOW,
+        # Author strip in a subtle pill shape
+        pill_w = 440
+        pill_h = 38
+        self._draw_pill(cx - (pill_w / 2), cy + 105, cx + (pill_w / 2), cy + 105 + pill_h, fill=COLOR_CARD, outline=COLOR_BLOB_MID, width=1)
+        self.canvas.create_text(
+            cx, cy + 105 + (pill_h / 2),
+            text=f"by {data['footer_left']}   |   {data['footer_right']}",
+            font=(self.font_body, max(15, int(body_pt * 0.65)), "bold"),
+            fill=COLOR_PLUM,
         )
-        lbl_footer_left.pack(side="left")
-
-        lbl_footer_right = ctk.CTkLabel(
-            footer_frame,
-            text=data["footer_right"],
-            font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-            text_color=COLOR_TEXT_MUTED,
-        )
-        lbl_footer_right.pack(side="right")
 
     # ---------------------------------------------------------------------
     # SLIDE 2: THE PROBLEM
     # ---------------------------------------------------------------------
-    def _render_problem_slide(self, data, wrap_w, title_pt, body_pt, sub_pt):
-        # Title
-        lbl_title = ctk.CTkLabel(
-            self.slide_container,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=title_pt, weight="bold"),
-            text_color=COLOR_ACCENT,
-            anchor="w",
+    def _render_problem(self, data: Dict[str, Any], w: int, h: int, title_pt: int, body_pt: int):
+        # Header strictly at top
+        title_y = 20
+        self.canvas.create_text(
+            54, title_y,
+            text=data["title"].upper(),
+            font=(self.font_serif, title_pt, "bold"),
+            fill=COLOR_TEXT_DARK,
+            anchor="nw",
         )
-        lbl_title.pack(fill="x", pady=(10, 16))
+        self._draw_arrow_doodle(340, title_y + 10)
 
-        # Content card
-        card = ctk.CTkFrame(self.slide_container, fg_color=COLOR_CARD, corner_radius=12, border_width=1, border_color=COLOR_CARD_BORDER)
-        card.pack(fill="both", expand=True, padx=4, pady=4)
-
-        bullets_frame = ctk.CTkFrame(card, fg_color="transparent")
-        bullets_frame.pack(fill="both", expand=True, padx=30, pady=20)
-
-        for text in data["bullets"]:
-            row = ctk.CTkFrame(bullets_frame, fg_color="transparent")
-            row.pack(fill="x", pady=8, anchor="w")
-
-            dot = ctk.CTkLabel(
-                row,
-                text="⚠️",
-                font=ctk.CTkFont(size=int(body_pt * 0.9)),
-                width=30,
-            )
-            dot.pack(side="left", anchor="n", padx=(0, 12))
-
-            msg = ctk.CTkLabel(
-                row,
-                text=text,
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-                text_color=COLOR_TEXT_MAIN,
-                justify="left",
-                wraplength=wrap_w - 120,
-                anchor="w",
-            )
-            msg.pack(side="left", fill="x", expand=True)
-
-        # Highlight callout box
-        hl_frame = ctk.CTkFrame(card, fg_color="#0f172a", corner_radius=8, border_width=1, border_color=COLOR_YELLOW)
-        hl_frame.pack(fill="x", padx=30, pady=(10, 20))
-
-        lbl_hl = ctk.CTkLabel(
-            hl_frame,
-            text=f"👉  {data['highlight']}",
-            font=ctk.CTkFont(family="Segoe UI", size=sub_pt, weight="bold"),
-            text_color=COLOR_YELLOW,
-            justify="center",
-            wraplength=wrap_w - 140,
+        # Bottom Pill strictly above footer
+        pill_h = 44
+        pill_y1 = h - 56
+        pill_y2 = pill_y1 + pill_h
+        self._draw_pill(54, pill_y1, w - 54, pill_y2, fill=COLOR_PLUM, outline="")
+        self.canvas.create_text(
+            w / 2, (pill_y1 + pill_y2) / 2,
+            text=f"👉   {data['highlight']}",
+            font=(self.font_serif, max(18, int(body_pt * 0.85)), "bold"),
+            fill="#FFFFFF",
         )
-        lbl_hl.pack(padx=20, pady=14)
+
+        # 2x2 Grid of Rounded White Cards (strictly between title and bottom pill)
+        grid_top = 80
+        grid_bottom = pill_y1 - 16
+        grid_left = 54
+        grid_right = w - 54
+        card_gap = 14
+
+        col_w = (grid_right - grid_left - card_gap) / 2.0
+        row_h = (grid_bottom - grid_top - card_gap) / 2.0
+
+        badges = ["01", "02", "03", "04"]
+        bullets = data["bullets"]
+        b_font_pt = max(20, int(body_pt * 0.85))
+
+        for idx in range(4):
+            c = idx % 2
+            r = idx // 2
+            x1 = grid_left + c * (col_w + card_gap)
+            y1 = grid_top + r * (row_h + card_gap)
+            x2 = x1 + col_w
+            y2 = y1 + row_h
+
+            # White Card
+            self._draw_card(x1, y1, x2, y2, radius=14, fill=COLOR_CARD, outline=COLOR_BLOB_MID, width=1)
+
+            # Plum number badge in top-left of card
+            badge_r = 13
+            bx, by = x1 + 24, y1 + 22
+            self.canvas.create_oval(bx - badge_r, by - badge_r, bx + badge_r, by + badge_r, fill=COLOR_PLUM, outline="")
+            self.canvas.create_text(bx, by, text=badges[idx], font=(self.font_serif, 10, "bold"), fill="#FFFFFF")
+
+            # Bullet text anchored northwest to guarantee it never extends outside card
+            self.canvas.create_text(
+                x1 + 48, y1 + 14,
+                text=bullets[idx],
+                font=(self.font_body, b_font_pt),
+                fill=COLOR_TEXT_DARK,
+                anchor="nw",
+                width=col_w - 64,
+            )
 
     # ---------------------------------------------------------------------
     # SLIDE 3: PROPOSED SOLUTION
     # ---------------------------------------------------------------------
-    def _render_solution_slide(self, data, wrap_w, title_pt, body_pt, sub_pt):
-        # Title
-        lbl_title = ctk.CTkLabel(
-            self.slide_container,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=title_pt, weight="bold"),
-            text_color=COLOR_ACCENT,
-            anchor="w",
-            wraplength=wrap_w,
-            justify="left",
+    def _render_solution(self, data: Dict[str, Any], w: int, h: int, title_pt: int, body_pt: int):
+        title_y = 16
+        self.canvas.create_text(
+            50, title_y,
+            text="PROPOSED SOLUTION",
+            font=(self.font_serif, title_pt, "bold"),
+            fill=COLOR_TEXT_DARK,
+            anchor="nw",
         )
-        lbl_title.pack(fill="x", pady=(10, 12))
+        self._draw_arrow_doodle(390, title_y + 10)
 
-        # Main 5-step flow container
-        card = ctk.CTkFrame(self.slide_container, fg_color=COLOR_CARD, corner_radius=12, border_width=1, border_color=COLOR_CARD_BORDER)
-        card.pack(fill="both", expand=True, padx=4, pady=(0, 8))
-
-        steps_frame = ctk.CTkFrame(card, fg_color="transparent")
-        steps_frame.pack(fill="both", expand=True, padx=24, pady=12)
-
-        step_colors = [COLOR_YELLOW, COLOR_ACCENT, "#38bdf8", COLOR_RED, COLOR_GREEN]
-
-        for i, (tag, desc) in enumerate(data["steps"]):
-            row = ctk.CTkFrame(steps_frame, fg_color="transparent")
-            row.pack(fill="x", pady=4, anchor="w")
-
-            tag_badge = ctk.CTkLabel(
-                row,
-                text=tag,
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt, weight="bold"),
-                text_color=step_colors[i % len(step_colors)],
-                width=140,
-                anchor="w",
-            )
-            tag_badge.pack(side="left", padx=(0, 12), anchor="n")
-
-            arrow_lbl = ctk.CTkLabel(
-                row,
-                text="—",
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt, weight="bold"),
-                text_color=COLOR_TEXT_MUTED,
-            )
-            arrow_lbl.pack(side="left", padx=(0, 12), anchor="n")
-
-            desc_lbl = ctk.CTkLabel(
-                row,
-                text=desc,
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-                text_color=COLOR_TEXT_MAIN,
-                justify="left",
-                wraplength=wrap_w - 240,
-                anchor="w",
-            )
-            desc_lbl.pack(side="left", fill="x", expand=True)
-
-        # Safety strip at bottom
-        safety_card = ctk.CTkFrame(self.slide_container, fg_color="#0f172a", corner_radius=8, border_width=1, border_color=COLOR_GREEN)
-        safety_card.pack(fill="x", padx=4, pady=(4, 0))
-
-        lbl_safety = ctk.CTkLabel(
-            safety_card,
-            text=f"🛡️  {data['safety_strip']}",
-            font=ctk.CTkFont(family="Segoe UI", size=int(body_pt * 0.95), weight="bold"),
-            text_color=COLOR_GREEN,
-            justify="center",
-            wraplength=wrap_w - 80,
+        # Bottom Safety strip in plum pill
+        pill_h = 40
+        pill_y1 = h - 48
+        pill_y2 = pill_y1 + pill_h
+        left_m = 44
+        right_m = w - 44
+        self._draw_pill(left_m, pill_y1, right_m, pill_y2, fill=COLOR_PLUM, outline="")
+        self.canvas.create_text(
+            w / 2, (pill_y1 + pill_y2) / 2,
+            text=f"🛡️   {data['safety_strip']}",
+            font=(self.font_body, max(16, int(body_pt * 0.70)), "bold"),
+            fill="#FFFFFF",
         )
-        lbl_safety.pack(padx=20, pady=10)
+
+        # Five rounded cards in a row (using >= 60% of slide height)
+        card_y1 = 92
+        card_y2 = pill_y1 - 12
+        card_h = card_y2 - card_y1
+        gap = 10
+        card_w = (right_m - left_m - (4 * gap)) / 5.0
+
+        verbs = ["PLANT", "WATCH", "IDENTIFY", "CONTAIN", "REPORT"]
+        steps = data["steps"]
+        desc_font_pt = max(16, int(body_pt * 0.70))
+
+        for i in range(5):
+            cx1 = left_m + i * (card_w + gap)
+            cx2 = cx1 + card_w
+
+            is_contain = (i == 3)
+            out_col = COLOR_CORAL if is_contain else COLOR_PLUM
+
+            self._draw_card(cx1, card_y1, cx2, card_y2, radius=12, fill=COLOR_CARD, outline=out_col, width=2)
+            mid_x = (cx1 + cx2) / 2.0
+
+            # Numbered circle
+            num_y = card_y1 + 18
+            num_r = 12
+            c_fill = COLOR_CORAL if is_contain else COLOR_PLUM
+            self.canvas.create_oval(mid_x - num_r, num_y - num_r, mid_x + num_r, num_y + num_r, fill=c_fill, outline="")
+            self.canvas.create_text(mid_x, num_y, text=str(i + 1), font=(self.font_serif, 10, "bold"), fill="#FFFFFF")
+
+            # Icon
+            self._draw_step_icon(i, mid_x, card_y1 + 46, is_contain)
+
+            # Bold verb at 30+ pt
+            self.canvas.create_text(
+                mid_x, card_y1 + 80,
+                text=verbs[i],
+                font=(self.font_serif, max(22, int(body_pt * 1.05)), "bold"),
+                fill=out_col,
+            )
+
+            # Description (anchored north to never collide with bottom)
+            self.canvas.create_text(
+                mid_x, card_y1 + 106,
+                text=steps[i][1],
+                font=(self.font_body, desc_font_pt),
+                fill=COLOR_TEXT_DARK,
+                anchor="n",
+                width=card_w - 18,
+                justify="center",
+            )
+
+            # Connecting dashed curved arrow between cards
+            if i < 4:
+                arrow_y = card_y1 + 18
+                self.canvas.create_line(cx2 + 1, arrow_y, cx2 + gap - 1, arrow_y, fill=COLOR_BLOB_MID, width=2, arrow=tk.LAST, dash=(4, 2))
+
+    def _draw_step_icon(self, step_idx: int, cx: float, cy: float, is_contain: bool):
+        """Draw minimalist Canvas icon for each step."""
+        col = COLOR_CORAL if is_contain else COLOR_PLUM
+        if step_idx == 0:  # Bait file
+            self.canvas.create_rectangle(cx - 9, cy - 11, cx + 9, cy + 11, fill=COLOR_CARD, outline=col, width=2)
+            self.canvas.create_line(cx - 5, cy - 4, cx + 5, cy - 4, fill=col, width=1.5)
+            self.canvas.create_line(cx - 5, cy + 2, cx + 3, cy + 2, fill=col, width=1.5)
+        elif step_idx == 1:  # Eye
+            self.canvas.create_arc(cx - 12, cy - 10, cx + 12, cy + 10, start=45, extent=90, style="arc", outline=col, width=2)
+            self.canvas.create_arc(cx - 12, cy - 10, cx + 12, cy + 10, start=225, extent=90, style="arc", outline=col, width=2)
+            self.canvas.create_oval(cx - 3, cy - 3, cx + 3, cy + 3, fill=col, outline="")
+        elif step_idx == 2:  # Magnifier
+            self.canvas.create_oval(cx - 9, cy - 9, cx + 5, cy + 5, fill=COLOR_CARD, outline=col, width=2)
+            self.canvas.create_line(cx + 4, cy + 4, cx + 11, cy + 11, fill=col, width=2.5)
+        elif step_idx == 3:  # Pause bars
+            self.canvas.create_rectangle(cx - 6, cy - 10, cx - 2, cy + 10, fill=col, outline="")
+            self.canvas.create_rectangle(cx + 2, cy - 10, cx + 6, cy + 10, fill=col, outline="")
+        elif step_idx == 4:  # Document
+            self.canvas.create_rectangle(cx - 8, cy - 11, cx + 8, cy + 11, fill=COLOR_CARD, outline=col, width=2)
+            self.canvas.create_line(cx - 4, cy - 4, cx + 4, cy - 4, fill=col, width=1.5)
+            self.canvas.create_line(cx - 4, cy + 1, cx + 4, cy + 1, fill=col, width=1.5)
 
     # ---------------------------------------------------------------------
     # SLIDE 4: OBJECTIVES (SMART)
     # ---------------------------------------------------------------------
-    def _render_objectives_slide(self, data, wrap_w, title_pt, body_pt, sub_pt, small_pt):
-        # Title
-        lbl_title = ctk.CTkLabel(
-            self.slide_container,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=title_pt, weight="bold"),
-            text_color=COLOR_ACCENT,
-            anchor="w",
+    def _render_objectives(self, data: Dict[str, Any], w: int, h: int, title_pt: int, body_pt: int, hero_pt: int):
+        title_y = 16
+        self.canvas.create_text(
+            50, title_y,
+            text=data["title"].upper(),
+            font=(self.font_serif, title_pt, "bold"),
+            fill=COLOR_TEXT_DARK,
+            anchor="nw",
         )
-        lbl_title.pack(fill="x", pady=(10, 12))
+        self._draw_arrow_doodle(350, title_y + 10)
 
         # Three cards row
-        cards_row = ctk.CTkFrame(self.slide_container, fg_color="transparent")
-        cards_row.pack(fill="both", expand=True, padx=4, pady=4)
-        cards_row.grid_columnconfigure((0, 1, 2), weight=1)
-        cards_row.grid_rowconfigure(0, weight=1)
+        gap = 16
+        left_m = 48
+        right_m = w - 48
+        card_w = (right_m - left_m - (2 * gap)) / 3.0
+        card_y1 = 82
+        card_y2 = 318
 
-        card_accent_colors = [COLOR_ACCENT, COLOR_GREEN, COLOR_YELLOW]
+        cards_data = data["cards"]
 
-        card_width_approx = max(260, int((wrap_w - 60) / 3))
+        for i, item in enumerate(cards_data):
+            cx1 = left_m + i * (card_w + gap)
+            cx2 = cx1 + card_w
 
-        for col, card_data in enumerate(data["cards"]):
-            c_frame = ctk.CTkFrame(
-                cards_row,
-                fg_color=COLOR_CARD,
-                corner_radius=12,
-                border_width=1,
-                border_color=COLOR_CARD_BORDER,
-            )
-            c_frame.grid(row=0, column=col, padx=8, pady=4, sticky="nsew")
+            self._draw_card(cx1, card_y1, cx2, card_y2, radius=14, fill=COLOR_CARD, outline=COLOR_BLOB_MID, width=1)
 
-            accent_color = card_accent_colors[col % len(card_accent_colors)]
-
-            # Header
-            lbl_num = ctk.CTkLabel(
-                c_frame,
-                text=f"{card_data['num']}. {card_data['heading']}",
-                font=ctk.CTkFont(family="Segoe UI", size=sub_pt, weight="bold"),
-                text_color=accent_color,
-                anchor="w",
-                justify="left",
-                wraplength=card_width_approx - 30,
-            )
-            lbl_num.pack(padx=16, pady=(16, 8), fill="x")
-
-            # Goal
-            lbl_goal = ctk.CTkLabel(
-                c_frame,
-                text=f"Goal: {card_data['goal']}",
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-                text_color=COLOR_TEXT_MAIN,
-                anchor="w",
-                justify="left",
-                wraplength=card_width_approx - 30,
-            )
-            lbl_goal.pack(padx=16, pady=4, fill="x")
-
-            # Measure
-            lbl_measure = ctk.CTkLabel(
-                c_frame,
-                text=f"Measure: {card_data['measure']}",
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-                text_color=COLOR_TEXT_MUTED,
-                anchor="w",
-                justify="left",
-                wraplength=card_width_approx - 30,
-            )
-            lbl_measure.pack(padx=16, pady=4, fill="x")
-
-            # Result
-            lbl_result = ctk.CTkLabel(
-                c_frame,
-                text=f"Result: {card_data['result']}",
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt, weight="bold"),
-                text_color=accent_color,
-                anchor="w",
-                justify="left",
-                wraplength=card_width_approx - 30,
-            )
-            lbl_result.pack(padx=16, pady=6, fill="x")
-
-            # Deadline footer
-            lbl_deadline = ctk.CTkLabel(
-                c_frame,
-                text=card_data["deadline"],
-                font=ctk.CTkFont(family="Segoe UI", size=small_pt),
-                text_color=COLOR_TEXT_MUTED,
+            # Top row: number badge & heading
+            badge_y = card_y1 + 18
+            num_r = 10
+            self.canvas.create_oval(cx1 + 20 - num_r, badge_y - num_r, cx1 + 20 + num_r, badge_y + num_r, fill=COLOR_PLUM, outline="")
+            self.canvas.create_text(cx1 + 20, badge_y, text=item["num"], font=(self.font_serif, 9, "bold"), fill="#FFFFFF")
+            self.canvas.create_text(
+                cx1 + 36, badge_y,
+                text=item["heading"],
+                font=(self.font_serif, 12, "bold"),
+                fill=COLOR_PLUM,
                 anchor="w",
             )
-            lbl_deadline.pack(side="bottom", padx=16, pady=12, fill="x")
 
-        # Small footnote
-        lbl_footnote = ctk.CTkLabel(
-            self.slide_container,
+            # S-M-A-R-T letter pills at top right
+            smart_letters = ["S", "M", "A", "R", "T"]
+            for s_idx, ch_s in enumerate(smart_letters):
+                sx = cx2 - 82 + (s_idx * 14)
+                self.canvas.create_oval(sx - 5.5, badge_y - 5.5, sx + 5.5, badge_y + 5.5, fill=COLOR_BLOB_SOFT, outline="")
+                self.canvas.create_text(sx, badge_y, text=ch_s, font=(self.font_serif, 7, "bold"), fill=COLOR_PLUM)
+
+            # Hero Metric (e.g. "260 ms", "5 of 5", "1 per inc.")
+            self.canvas.create_text(
+                cx1 + 20, card_y1 + 42,
+                text=item["hero"],
+                font=(self.font_serif, 28, "bold"),
+                fill=COLOR_PLUM,
+                anchor="nw",
+            )
+
+            # Goal line
+            self.canvas.create_text(
+                cx1 + 20, card_y1 + 86,
+                text=item["goal"],
+                font=(self.font_body, 11, "bold"),
+                fill=COLOR_TEXT_DARK,
+                anchor="nw",
+                width=card_w - 40,
+            )
+
+            # Measure line
+            self.canvas.create_text(
+                cx1 + 20, card_y1 + 130,
+                text=item["measure"],
+                font=(self.font_body, 10),
+                fill=COLOR_TEXT_MUTED,
+                anchor="nw",
+                width=card_w - 40,
+            )
+
+            # Result chip pill
+            pill_top = card_y1 + 180
+            pill_bot = pill_top + 28
+            self._draw_pill(cx1 + 16, pill_top, cx2 - 16, pill_bot, fill=COLOR_BLOB_SOFT, outline="")
+            self.canvas.create_text(
+                (cx1 + cx2) / 2, (pill_top + pill_bot) / 2,
+                text=item["result"],
+                font=(self.font_body, 10, "bold"),
+                fill=COLOR_PLUM,
+                justify="center",
+            )
+
+            # Deadline tag
+            self.canvas.create_text(
+                cx1 + 20, card_y2 - 14,
+                text=item["deadline"].upper(),
+                font=(self.font_mono, 9, "bold"),
+                fill=COLOR_TEXT_MUTED,
+                anchor="w",
+            )
+
+        # Horizontal Bar Chart below cards
+        chart_y1 = card_y2 + 16
+        chart_y2 = h - 30
+        chart_left = left_m + 130
+        chart_right = right_m - 30
+        chart_w = chart_right - chart_left
+
+        self._draw_card(left_m, chart_y1, right_m, chart_y2, radius=12, fill=COLOR_CARD, outline=COLOR_BLOB_MID, width=1)
+
+        def ms_to_x(ms_val):
+            return chart_left + (ms_val / 3000.0) * chart_w
+
+        bar_h = 14
+        by1 = chart_y1 + 26
+        self.canvas.create_text(chart_left - 12, by1 + (bar_h / 2), text="BEFORE (cold)", font=(self.font_mono, 10, "bold"), fill=COLOR_TEXT_MUTED, anchor="e")
+        self.canvas.create_rectangle(chart_left, by1, ms_to_x(2450), by1 + bar_h, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_rectangle(chart_left, by1, ms_to_x(930), by1 + bar_h, fill=COLOR_BLOB_MID, outline="")
+        self.canvas.create_text(ms_to_x(2450) + 8, by1 + (bar_h / 2), text="930 ms median (2450 ms worst)", font=(self.font_body, 10), fill=COLOR_TEXT_DARK, anchor="w")
+
+        by2 = by1 + bar_h + 14
+        self.canvas.create_text(chart_left - 12, by2 + (bar_h / 2), text="AFTER (cache)", font=(self.font_mono, 10, "bold"), fill=COLOR_PLUM, anchor="e")
+        self.canvas.create_rectangle(chart_left, by2, ms_to_x(950), by2 + bar_h, fill=COLOR_BLOB_MID, outline="")
+        self.canvas.create_rectangle(chart_left, by2, ms_to_x(260), by2 + bar_h, fill=COLOR_PLUM, outline="")
+        self.canvas.create_text(ms_to_x(950) + 8, by2 + (bar_h / 2), text="260 ms median (950 ms worst)", font=(self.font_body, 10, "bold"), fill=COLOR_PLUM, anchor="w")
+
+        # 1s goal coral line
+        goal_x = ms_to_x(1000)
+        self.canvas.create_line(goal_x, chart_y1 + 8, goal_x, chart_y2 - 8, fill=COLOR_CORAL, width=2, dash=(4, 2))
+        self.canvas.create_text(goal_x, chart_y1 + 10, text="1 s goal", font=(self.font_serif, 9, "bold"), fill=COLOR_CORAL, anchor="s")
+
+        # Footnote
+        self.canvas.create_text(
+            left_m, h - 12,
             text=f"*{data['footnote']}",
-            font=ctk.CTkFont(family="Segoe UI", size=small_pt, slant="italic"),
-            text_color=COLOR_TEXT_MUTED,
-            anchor="w",
-            wraplength=wrap_w,
-        )
-        lbl_footnote.pack(fill="x", padx=8, pady=(6, 0))
-
-    # ---------------------------------------------------------------------
-    # SLIDE 5: SYSTEM ARCHITECTURE (Canvas Diagram)
-    # ---------------------------------------------------------------------
-    def _render_architecture_slide(self, data, title_pt):
-        # Title
-        lbl_title = ctk.CTkLabel(
-            self.slide_container,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=title_pt, weight="bold"),
-            text_color=COLOR_ACCENT,
+            font=(self.font_body, 9, "italic"),
+            fill=COLOR_TEXT_MUTED,
             anchor="w",
         )
-        lbl_title.pack(fill="x", pady=(6, 6))
 
-        # Canvas container
-        canvas_frame = ctk.CTkFrame(self.slide_container, fg_color=COLOR_CARD, corner_radius=12, border_width=1, border_color=COLOR_CARD_BORDER)
-        canvas_frame.pack(fill="both", expand=True, padx=4, pady=4)
-
-        canvas = tk.Canvas(canvas_frame, bg=COLOR_HEADER, highlightthickness=0)
-        canvas.pack(fill="both", expand=True, padx=8, pady=8)
-
-        def _draw(event=None):
-            try:
-                if not canvas.winfo_exists():
-                    return
-                w = canvas.winfo_width()
-                h = canvas.winfo_height()
-                if w <= 10 or h <= 10:
-                    return
-                self._draw_architecture_diagram(canvas, w, h)
-            except Exception:
-                pass
-
-        canvas.bind("<Configure>", _draw)
-
-    def _draw_architecture_diagram(self, canvas: tk.Canvas, w: int, h: int):
-        """Draw complete architecture diagram redrawing on resize, readable at projector size."""
-        canvas.delete("all")
-
-        # Dynamic font sizes for diagram
-        f_title = ("Segoe UI", max(12, int(h * 0.024)), "bold")
-        f_sub = ("Segoe UI", max(10, int(h * 0.018)), "normal")
-        f_legend = ("Segoe UI", max(10, int(h * 0.018)), "normal")
-        f_loop = ("Segoe UI", max(11, int(h * 0.020)), "bold")
-
-        # -------------------------------------------------------------
-        # Helper: Draw stylized rounded/bordered box with wrapped text
-        # -------------------------------------------------------------
-        def draw_box(x1, y1, x2, y2, fill_color, border_color, title_text, sub_text="", dashed=False):
-            dash_param = (5, 3) if dashed else ()
-            canvas.create_rectangle(
-                x1, y1, x2, y2,
-                fill=fill_color,
-                outline=border_color,
-                width=2,
-                dash=dash_param,
-            )
-            mid_x = (x1 + x2) / 2
-            max_text_w = max(40, int((x2 - x1) - 10))
-            if sub_text:
-                mid_y = (y1 + y2) / 2 - 12
-                canvas.create_text(mid_x, mid_y, text=title_text, fill=COLOR_TEXT_MAIN, font=f_title, justify="center", width=max_text_w)
-                canvas.create_text(mid_x, mid_y + 24, text=sub_text, fill=COLOR_TEXT_MUTED, font=f_sub, justify="center", width=max_text_w)
-            else:
-                mid_y = (y1 + y2) / 2
-                canvas.create_text(mid_x, mid_y, text=title_text, fill=COLOR_TEXT_MAIN, font=f_title, justify="center", width=max_text_w)
-
-        # -------------------------------------------------------------
-        # 1. Top bar: Desktop Console (app.py)
-        # -------------------------------------------------------------
-        top_y1 = h * 0.03
-        top_y2 = h * 0.13
-        top_x1 = w * 0.22
-        top_x2 = w * 0.78
-        draw_box(top_x1, top_y1, top_x2, top_y2, COLOR_CARD, COLOR_ACCENT, "Desktop Console (app.py)", "CustomTkinter Dashboard & Telemetry Feeds")
-
-        # -------------------------------------------------------------
-        # Supporting boxes above flow:
-        # Cache thread (above Box 3) & Config (above Box 4)
-        # -------------------------------------------------------------
-        mid_top_y1 = h * 0.17
-        mid_top_y2 = h * 0.27
-
-        # Process cache thread (feeds Process Identifier)
-        cache_x1 = w * 0.42
-        cache_x2 = w * 0.58
-        draw_box(cache_x1, mid_top_y1, cache_x2, mid_top_y2, "#0b1727", COLOR_YELLOW, "Process cache thread", "(polls about every 100 ms)")
-
-        # config.py box (feeds Identifier & Containment)
-        cfg_x1 = w * 0.62
-        cfg_x2 = w * 0.78
-        draw_box(cfg_x1, mid_top_y1, cfg_x2, mid_top_y2, "#0b1727", COLOR_ACCENT, "config.py: settings", "140-process allowlist, test mode")
-
-        # -------------------------------------------------------------
-        # 2. Main Flow: 5 boxes left-to-right
-        # -------------------------------------------------------------
-        flow_y1 = h * 0.33
-        flow_y2 = h * 0.50
-
-        box_w = w * 0.17
-        gap = (w - (5 * box_w) - (w * 0.06)) / 4
-        start_x = w * 0.03
-
-        # 5 box definitions
-        b1_x1 = start_x
-        b1_x2 = b1_x1 + box_w
-
-        b2_x1 = b1_x2 + gap
-        b2_x2 = b2_x1 + box_w
-
-        b3_x1 = b2_x2 + gap
-        b3_x2 = b3_x1 + box_w
-
-        b4_x1 = b3_x2 + gap
-        b4_x2 = b4_x1 + box_w
-
-        b5_x1 = b4_x2 + gap
-        b5_x2 = b5_x1 + box_w
-
-        # Draw 5 engine boxes with wrapped titles & subtexts
-        draw_box(b1_x1, flow_y1, b1_x2, flow_y2, COLOR_CARD, COLOR_YELLOW, "Decoy Planter", "(decoy.py)")
-        draw_box(b2_x1, flow_y1, b2_x2, flow_y2, COLOR_CARD, COLOR_ACCENT, "File Monitor", "(monitor.py, watchdog)")
-        draw_box(b3_x1, flow_y1, b3_x2, flow_y2, COLOR_CARD, COLOR_ACCENT, "Process Identifier", "(process_id.py, psutil)")
-        draw_box(b4_x1, flow_y1, b4_x2, flow_y2, COLOR_CARD, COLOR_RED, "Containment (contain.py)", "freeze, then terminate")
-        draw_box(b5_x1, flow_y1, b5_x2, flow_y2, COLOR_CARD, COLOR_GREEN, "Forensics", "(incident_manager.py)\nquarantine, SHA-256, reports")
-
-        # -------------------------------------------------------------
-        # Arrows in main flow (Box 1 -> 2 -> 3 -> 4 -> 5)
-        # -------------------------------------------------------------
-        flow_mid_y = (flow_y1 + flow_y2) / 2
-        for (ax1, ax2) in [(b1_x2, b2_x1), (b2_x2, b3_x1), (b3_x2, b4_x1), (b4_x2, b5_x1)]:
-            canvas.create_line(ax1, flow_mid_y, ax2, flow_mid_y, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-
-        # Arrow: Top console down to engine
-        canvas.create_line((top_x1 + top_x2) / 2, top_y2, (top_x1 + top_x2) / 2, mid_top_y1 - 4, fill=COLOR_TEXT_MUTED, width=2, arrow=tk.LAST)
-        canvas.create_line(top_x1 + 30, top_y2, b2_x1 + (box_w / 2), flow_y1, fill=COLOR_TEXT_MUTED, width=2, arrow=tk.LAST)
-
-        # Arrow: Process cache -> Process Identifier
-        canvas.create_line((cache_x1 + cache_x2) / 2, mid_top_y2, (b3_x1 + b3_x2) / 2, flow_y1, fill=COLOR_YELLOW, width=2, arrow=tk.LAST)
-
-        # Arrow: config.py -> Identifier & Containment
-        cfg_mid_x = (cfg_x1 + cfg_x2) / 2
-        canvas.create_line(cfg_mid_x, mid_top_y2, (b4_x1 + b4_x2) / 2, flow_y1, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-        canvas.create_line(cfg_x1, (mid_top_y1 + mid_top_y2) / 2, cache_x2, (mid_top_y1 + mid_top_y2) / 2, fill=COLOR_ACCENT, width=1, dash=(3, 3), arrow=tk.LAST)
-
-        # -------------------------------------------------------------
-        # 3. Self-healing loop: Containment back to Planter
-        # -------------------------------------------------------------
-        loop_y = flow_y2 + (h * 0.05)
-        canvas.create_line(
-            (b4_x1 + b4_x2) / 2, flow_y2,
-            (b4_x1 + b4_x2) / 2, loop_y,
-            (b1_x1 + b1_x2) / 2, loop_y,
-            (b1_x1 + b1_x2) / 2, flow_y2,
-            fill=COLOR_GREEN, width=2, arrow=tk.LAST
+    # ---------------------------------------------------------------------
+    # SLIDE 5: SYSTEM ARCHITECTURE
+    # ---------------------------------------------------------------------
+    def _render_architecture(self, data: Dict[str, Any], w: int, h: int, title_pt: int):
+        title_y = 16
+        self.canvas.create_text(
+            48, title_y,
+            text=data["title"].upper(),
+            font=(self.font_serif, title_pt, "bold"),
+            fill=COLOR_TEXT_DARK,
+            anchor="nw",
         )
-        canvas.create_text(
-            (b2_x1 + b3_x2) / 2, loop_y + 12,
-            text="self-healing: restore decoy",
-            fill=COLOR_GREEN, font=f_loop, justify="center"
+        self._draw_arrow_doodle(370, title_y + 10)
+
+        # Reserve right panel for Legend first so it NEVER overlaps
+        legend_w = 210
+        legend_x1 = w - legend_w - 40
+        legend_x2 = w - 40
+        legend_y1 = 82
+        legend_y2 = h - 24
+
+        self._draw_card(legend_x1, legend_y1, legend_x2, legend_y2, radius=12, fill=COLOR_CARD, outline=COLOR_PLUM, width=2)
+        self.canvas.create_text(
+            (legend_x1 + legend_x2) / 2, legend_y1 + 20,
+            text="ARCHITECTURE ROLES",
+            font=(self.font_serif, 12, "bold"),
+            fill=COLOR_PLUM,
         )
 
-        # -------------------------------------------------------------
-        # 4. Dashed rectangle at bottom: Protected sandbox folder
-        # -------------------------------------------------------------
-        sand_x1 = w * 0.03
-        sand_x2 = w * 0.52
-        sand_y1 = h * 0.64
-        sand_y2 = h * 0.92
+        legend_items = [
+            (COLOR_PLUM, "Pipeline flow (1-5)"),
+            (COLOR_CORAL, "Containment / Kill"),
+            (COLOR_BLOB_MID, "Process Cache"),
+            (COLOR_HAIRLINE, "Dashed Sandbox"),
+        ]
+        for l_idx, (col_l, lbl_l) in enumerate(legend_items):
+            ly = legend_y1 + 48 + (l_idx * 28)
+            self.canvas.create_rectangle(legend_x1 + 14, ly - 5, legend_x1 + 26, ly + 5, fill=col_l, outline="")
+            self.canvas.create_text(legend_x1 + 34, ly, text=lbl_l, font=(self.font_body, 11), fill=COLOR_TEXT_DARK, anchor="w")
 
-        draw_box(
-            sand_x1, sand_y1, sand_x2, sand_y2,
-            "#07111e", COLOR_YELLOW,
-            "Protected sandbox folder: decoys and user files",
-            "Monitored directory holding tripwires and test assets",
-            dashed=True
+        # Left Pipeline Area
+        pipe_left = 40
+        pipe_right = legend_x1 - 24
+        pipe_w = pipe_right - pipe_left
+
+        # Top Support Box: Cache & Config
+        sup_y1 = 82
+        sup_y2 = 136
+        sup_w = (pipe_w - 16) / 2.0
+
+        # Box A: Process Cache
+        self._draw_card(pipe_left, sup_y1, pipe_left + sup_w, sup_y2, radius=8, fill=COLOR_CARD, outline=COLOR_PLUM, width=1)
+        self.canvas.create_rectangle(pipe_left + 1, sup_y1 + 1, pipe_left + sup_w - 1, sup_y1 + 14, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(pipe_left + 12, sup_y1 + 20, text="Process Cache Thread", font=(self.font_serif, 12, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
+        self.canvas.create_text(pipe_left + 12, sup_y1 + 38, text="polls psutil.pids() ~100ms", font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, anchor="w")
+
+        # Box B: Desktop Console
+        bx_b = pipe_left + sup_w + 16
+        self._draw_card(bx_b, sup_y1, pipe_right, sup_y2, radius=8, fill=COLOR_CARD, outline=COLOR_PLUM, width=1)
+        self.canvas.create_rectangle(bx_b + 1, sup_y1 + 1, pipe_right - 1, sup_y1 + 14, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(bx_b + 12, sup_y1 + 20, text="Desktop Console (app.py)", font=(self.font_serif, 12, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
+        self.canvas.create_text(bx_b + 12, sup_y1 + 38, text="config.py: 140 safe procs", font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, anchor="w")
+
+        # 5 Step Boxes
+        flow_y1 = 152
+        flow_y2 = 236
+        box_gap = 10
+        step_w = (pipe_w - (4 * box_gap)) / 5.0
+
+        step_boxes = [
+            ("1. PLANT", "Decoy Planter", "decoy.py", False),
+            ("2. WATCH", "File Monitor", "monitor.py", False),
+            ("3. IDENTIFY", "Process Identifier", "process_id.py", False),
+            ("4. CONTAIN", "Containment", "contain.py", True),
+            ("5. REPORT", "Forensics", "incident_manager.py", False),
+        ]
+
+        for s_idx, (tag, b_title, b_file, is_coral) in enumerate(step_boxes):
+            bx1 = pipe_left + s_idx * (step_w + box_gap)
+            bx2 = bx1 + step_w
+            out_col = COLOR_CORAL if is_coral else COLOR_PLUM
+
+            self._draw_card(bx1, flow_y1, bx2, flow_y2, radius=8, fill=COLOR_CARD, outline=out_col, width=2)
+            self.canvas.create_rectangle(bx1 + 2, flow_y1 + 2, bx2 - 2, flow_y1 + 16, fill=COLOR_BLOB_SOFT, outline="")
+
+            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 9, text=tag, font=(self.font_body, 9, "bold"), fill=out_col)
+            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 38, text=b_title, font=(self.font_serif, 11, "bold"), fill=COLOR_TEXT_DARK, justify="center")
+            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 64, text=b_file, font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, justify="center")
+
+            if s_idx < 4:
+                ay = (flow_y1 + flow_y2) / 2
+                self.canvas.create_line(bx2 + 1, ay, bx2 + box_gap - 1, ay, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+
+        # Dashed Sandbox Boundary Container below pipeline
+        sand_y1 = 280
+        sand_y2 = h - 20
+        self.canvas.create_rectangle(pipe_left, sand_y1, pipe_right, sand_y2, fill=COLOR_CARD, outline=COLOR_PLUM, width=2, dash=(6, 4))
+
+        # Bottom label inside sandbox container
+        self.canvas.create_text(
+            pipe_left + 14, sand_y2 - 14,
+            text="Protected Sandbox: test_sandbox (honeytokens & mock user files)",
+            font=(self.font_serif, 11, "bold"),
+            fill=COLOR_PLUM,
+            anchor="w",
         )
 
-        # Arrows between Sandbox, Planter, and Monitor
-        b1_mid_x = (b1_x1 + b1_x2) / 2
-        canvas.create_line(b1_mid_x, loop_y + 20, b1_mid_x, sand_y1, fill=COLOR_YELLOW, width=2, arrow=tk.LAST)
-        canvas.create_text(b1_mid_x + 8, (loop_y + 20 + sand_y1) / 2, text="seeds decoys", fill=COLOR_YELLOW, font=f_sub, anchor="w")
+        # Vertical arrows in the gap between flow boxes (y=236) and sandbox (y=280)
+        gap_mid_y = (flow_y2 + sand_y1) / 2
+        b1_mid = pipe_left + (step_w / 2)
+        self.canvas.create_line(b1_mid, flow_y2, b1_mid, sand_y1 + 20, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+        self.canvas.create_text(b1_mid + 6, gap_mid_y, text="seeds decoys", font=(self.font_mono, 9), fill=COLOR_TEXT_MUTED, anchor="w")
 
-        b2_mid_x = (b2_x1 + b2_x2) / 2
-        canvas.create_line(b2_mid_x, sand_y1, b2_mid_x, loop_y + 20, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-        canvas.create_text(b2_mid_x + 8, (loop_y + 20 + sand_y1) / 2, text="watches I/O", fill=COLOR_ACCENT, font=f_sub, anchor="w")
+        b2_mid = pipe_left + step_w + box_gap + (step_w / 2)
+        self.canvas.create_line(b2_mid, sand_y1 + 20, b2_mid, flow_y2, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+        self.canvas.create_text(b2_mid + 6, gap_mid_y, text="I/O events", font=(self.font_mono, 9), fill=COLOR_TEXT_MUTED, anchor="w")
 
-        # -------------------------------------------------------------
-        # 5. Short Legend explaining solid vs dashed
-        # -------------------------------------------------------------
-        leg_x1 = w * 0.56
-        leg_x2 = w * 0.97
-        leg_y1 = h * 0.64
-        leg_y2 = h * 0.92
-
-        draw_box(leg_x1, leg_y1, leg_x2, leg_y2, COLOR_CARD, COLOR_CARD_BORDER, "Legend")
-
-        line1_y = leg_y1 + ((leg_y2 - leg_y1) * 0.40)
-        line2_y = leg_y1 + ((leg_y2 - leg_y1) * 0.70)
-        leg_text_w = max(60, int((leg_x2 - leg_x1) - 75))
-
-        canvas.create_line(leg_x1 + 15, line1_y, leg_x1 + 55, line1_y, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-        canvas.create_text(leg_x1 + 65, line1_y, text="Solid line: Control flow & telemetry pipeline", fill=COLOR_TEXT_MAIN, font=f_legend, anchor="w", width=leg_text_w)
-
-        canvas.create_line(leg_x1 + 15, line2_y, leg_x1 + 55, line2_y, fill=COLOR_YELLOW, width=2, dash=(5, 3))
-        canvas.create_text(leg_x1 + 65, line2_y, text="Dashed line: Protected sandbox isolation boundary", fill=COLOR_TEXT_MAIN, font=f_legend, anchor="w", width=leg_text_w)
-        canvas.create_line(b1_mid_x, loop_y + 20, b1_mid_x, sand_y1, fill=COLOR_YELLOW, width=2, arrow=tk.LAST)
-        canvas.create_text(b1_mid_x + 8, (loop_y + 20 + sand_y1) / 2, text="seeds decoys", fill=COLOR_YELLOW, font=f_sub, anchor="w")
-
-        b2_mid_x = (b2_x1 + b2_x2) / 2
-        canvas.create_line(b2_mid_x, sand_y1, b2_mid_x, loop_y + 20, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-        canvas.create_text(b2_mid_x + 8, (loop_y + 20 + sand_y1) / 2, text="watches I/O", fill=COLOR_ACCENT, font=f_sub, anchor="w")
-
-        # -------------------------------------------------------------
-        # 5. Short Legend explaining solid vs dashed
-        # -------------------------------------------------------------
-        leg_x1 = w * 0.58
-        leg_x2 = w * 0.97
-        leg_y1 = h * 0.66
-        leg_y2 = h * 0.92
-
-        draw_box(leg_x1, leg_y1, leg_x2, leg_y2, COLOR_CARD, COLOR_CARD_BORDER, "Legend")
-
-        # Legend items
-        mid_leg_x = (leg_x1 + leg_x2) / 2
-        line1_y = leg_y1 + ((leg_y2 - leg_y1) * 0.42)
-        line2_y = leg_y1 + ((leg_y2 - leg_y1) * 0.72)
-
-        # Solid sample
-        canvas.create_line(leg_x1 + 25, line1_y, leg_x1 + 75, line1_y, fill=COLOR_ACCENT, width=2, arrow=tk.LAST)
-        canvas.create_text(leg_x1 + 85, line1_y, text="Solid line: Control flow & telemetry pipeline", fill=COLOR_TEXT_MAIN, font=f_legend, anchor="w")
-
-        # Dashed sample
-        canvas.create_line(leg_x1 + 25, line2_y, leg_x1 + 75, line2_y, fill=COLOR_YELLOW, width=2, dash=(5, 3))
-        canvas.create_text(leg_x1 + 85, line2_y, text="Dashed line: Protected sandbox isolation boundary", fill=COLOR_TEXT_MAIN, font=f_legend, anchor="w")
+        # Self-healing loop inside sandbox
+        b4_mid = pipe_left + 3 * (step_w + box_gap) + (step_w / 2)
+        loop_y = sand_y1 + 45
+        self.canvas.create_line(b4_mid, flow_y2, b4_mid, loop_y, b1_mid, loop_y, b1_mid, sand_y1 + 20, fill=COLOR_PLUM, width=2, arrow=tk.LAST, dash=(4, 2))
+        self.canvas.create_text((b1_mid + b4_mid) / 2, loop_y - 10, text="self-healing: restore decoy", font=(self.font_mono, 9, "bold"), fill=COLOR_PLUM)
 
     # ---------------------------------------------------------------------
     # SLIDE 6: NEXT MILESTONES
     # ---------------------------------------------------------------------
-    def _render_milestones_slide(self, data, wrap_w, title_pt, body_pt, sub_pt):
-        # Title
-        lbl_title = ctk.CTkLabel(
-            self.slide_container,
-            text=data["title"],
-            font=ctk.CTkFont(family="Segoe UI", size=title_pt, weight="bold"),
-            text_color=COLOR_ACCENT,
-            anchor="w",
+    def _render_milestones(self, data: Dict[str, Any], w: int, h: int, title_pt: int, body_pt: int):
+        title_y = 16
+        self.canvas.create_text(
+            50, title_y,
+            text=data["title"].upper(),
+            font=(self.font_serif, title_pt, "bold"),
+            fill=COLOR_TEXT_DARK,
+            anchor="nw",
         )
-        lbl_title.pack(fill="x", pady=(10, 16))
+        self._draw_arrow_doodle(340, title_y + 10)
 
-        # Milestones card
-        card = ctk.CTkFrame(self.slide_container, fg_color=COLOR_CARD, corner_radius=12, border_width=1, border_color=COLOR_CARD_BORDER)
-        card.pack(fill="both", expand=True, padx=4, pady=4)
+        # Three cards: NEXT, THEN, LATER
+        gap = 16
+        left_m = 48
+        right_m = w - 48
+        card_w = (right_m - left_m - (2 * gap)) / 3.0
+        card_y1 = 66
+        card_y2 = h - 28
 
-        list_frame = ctk.CTkFrame(card, fg_color="transparent")
-        list_frame.pack(fill="both", expand=True, padx=30, pady=20)
+        sections = [
+            ("NEXT", [
+                "1. Test against more realistic ransomware behaviour (fast open-encrypt-close, several processes) and report accuracy honestly.",
+                "2. Use Windows kernel-level tracing (ETW) for more reliable attribution than the current heuristic.",
+            ]),
+            ("THEN", [
+                "3. Run as a protected Windows service so malware cannot easily switch it off.",
+                "4. Test for false alarms with backup and search-indexing tools.",
+            ]),
+            ("LATER", [
+                "5. Stretch goal: a central dashboard that collects alerts from many machines.",
+            ]),
+        ]
 
-        icons = ["🎯", "⚡", "🛡️", "🔍", "🌐"]
+        # Dashed paper plane path looping across milestone sections
+        self._draw_paper_plane_path(left_m + 20, card_y1 + 30, right_m - 20, card_y2 - 40)
 
-        for idx, text in enumerate(data["milestones"]):
-            row = ctk.CTkFrame(list_frame, fg_color="transparent")
-            row.pack(fill="x", pady=8, anchor="w")
+        ms_font_pt = max(16, int(body_pt * 0.70))
 
-            icon_lbl = ctk.CTkLabel(
-                row,
-                text=icons[idx % len(icons)],
-                font=ctk.CTkFont(size=int(body_pt * 0.9)),
-                width=30,
+        for s_idx, (sec_title, ms_list) in enumerate(sections):
+            cx1 = left_m + s_idx * (card_w + gap)
+            cx2 = cx1 + card_w
+
+            self._draw_card(cx1, card_y1, cx2, card_y2, radius=14, fill=COLOR_CARD, outline=COLOR_BLOB_MID, width=1)
+
+            # Header pill for section
+            pill_h = 32
+            self._draw_pill(cx1 + 18, card_y1 + 16, cx1 + 115, card_y1 + 16 + pill_h, fill=COLOR_PLUM, outline="")
+            self.canvas.create_text(
+                cx1 + 66, card_y1 + 16 + (pill_h / 2),
+                text=sec_title,
+                font=(self.font_serif, 14, "bold"),
+                fill="#FFFFFF",
             )
-            icon_lbl.pack(side="left", anchor="n", padx=(0, 12))
 
-            msg_lbl = ctk.CTkLabel(
-                row,
-                text=text,
-                font=ctk.CTkFont(family="Segoe UI", size=body_pt),
-                text_color=COLOR_TEXT_MAIN,
-                justify="left",
-                wraplength=wrap_w - 120,
-                anchor="w",
-            )
-            msg_lbl.pack(side="left", fill="x", expand=True)
+            # Milestones inside card (anchored nw with explicit vertical spacing)
+            item_y = card_y1 + 68
+            for ms_text in ms_list:
+                self.canvas.create_text(
+                    cx1 + 18, item_y,
+                    text=ms_text,
+                    font=(self.font_body, ms_font_pt),
+                    fill=COLOR_TEXT_DARK,
+                    anchor="nw",
+                    width=card_w - 36,
+                )
+                item_y += max(120, int((card_y2 - card_y1 - 80) / len(ms_list)))
