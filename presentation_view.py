@@ -1004,28 +1004,36 @@ class PresentationWindow(ctk.CTkToplevel):
     # SLIDE 5: SYSTEM ARCHITECTURE
     # ---------------------------------------------------------------------
     def _render_architecture(self, data: Dict[str, Any], w: int, h: int, title_pt: int):
+        # 1. Header with doodle moved safely after title text (Item 3, 5)
         title_y = 16
+        title_text = data["title"].upper()
         self.canvas.create_text(
             48, title_y,
-            text=data["title"].upper(),
+            text=title_text,
             font=(self.font_serif, title_pt, "bold"),
             fill=COLOR_TEXT_DARK,
             anchor="nw",
         )
-        self._draw_arrow_doodle(370, title_y + 10)
+        try:
+            t_font = tkfont.Font(family=self.font_serif, size=title_pt, weight="bold")
+            t_w = t_font.measure(title_text)
+        except Exception:
+            t_w = len(title_text) * int(title_pt * 0.65)
+        self._draw_arrow_doodle(48 + t_w + 18, title_y + 10)
 
-        # Reserve right panel for Legend first so it NEVER overlaps
-        legend_w = 210
-        legend_x1 = w - legend_w - 40
-        legend_x2 = w - 40
-        legend_y1 = 82
-        legend_y2 = h - 24
+        # 2. Right panel: Legend sized compactly to its content (Item 4)
+        legend_w = 230
+        legend_x1 = w - legend_w - 36
+        legend_x2 = w - 36
+        legend_y1 = 96  # Visible space between title and first row (Item 5)
+        legend_h = 204
+        legend_y2 = legend_y1 + legend_h
 
         self._draw_card(legend_x1, legend_y1, legend_x2, legend_y2, radius=12, fill=COLOR_CARD, outline=COLOR_PLUM, width=2)
         self.canvas.create_text(
-            (legend_x1 + legend_x2) / 2, legend_y1 + 20,
+            (legend_x1 + legend_x2) / 2, legend_y1 + 22,
             text="ARCHITECTURE ROLES",
-            font=(self.font_serif, 12, "bold"),
+            font=(self.font_serif, 15, "bold"),
             fill=COLOR_PLUM,
         )
 
@@ -1036,37 +1044,61 @@ class PresentationWindow(ctk.CTkToplevel):
             (COLOR_HAIRLINE, "Dashed Sandbox"),
         ]
         for l_idx, (col_l, lbl_l) in enumerate(legend_items):
-            ly = legend_y1 + 48 + (l_idx * 28)
-            self.canvas.create_rectangle(legend_x1 + 14, ly - 5, legend_x1 + 26, ly + 5, fill=col_l, outline="")
-            self.canvas.create_text(legend_x1 + 34, ly, text=lbl_l, font=(self.font_body, 11), fill=COLOR_TEXT_DARK, anchor="w")
+            ly = legend_y1 + 54 + (l_idx * 34)
+            self.canvas.create_rectangle(legend_x1 + 18, ly - 7, legend_x1 + 32, ly + 7, fill=col_l, outline="")
+            self.canvas.create_text(legend_x1 + 42, ly, text=lbl_l, font=(self.font_body, 13), fill=COLOR_TEXT_DARK, anchor="w")
 
-        # Left Pipeline Area
-        pipe_left = 40
-        pipe_right = legend_x1 - 24
+        # 3. Main Diagram Area: Tiers distributed evenly across full height (Item 4, 5)
+        pipe_left = 46
+        pipe_right = legend_x1 - 28
         pipe_w = pipe_right - pipe_left
 
-        # Top Support Box: Cache & Config
-        sup_y1 = 82
-        sup_y2 = 136
-        sup_w = (pipe_w - 16) / 2.0
+        # Tier 1: Support Row (Process Cache, Desktop Console, Policy)
+        sup_y1 = 96
+        sup_h = 74
+        sup_y2 = sup_y1 + sup_h
+        sup_gap = 14
+        sup_w = (pipe_w - (2 * sup_gap)) / 3.0
 
-        # Box A: Process Cache
-        self._draw_card(pipe_left, sup_y1, pipe_left + sup_w, sup_y2, radius=8, fill=COLOR_CARD, outline=COLOR_PLUM, width=1)
-        self.canvas.create_rectangle(pipe_left + 1, sup_y1 + 1, pipe_left + sup_w - 1, sup_y1 + 14, fill=COLOR_BLOB_SOFT, outline="")
-        self.canvas.create_text(pipe_left + 12, sup_y1 + 20, text="Process Cache Thread", font=(self.font_serif, 12, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
-        self.canvas.create_text(pipe_left + 12, sup_y1 + 38, text="polls psutil.pids() ~100ms", font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, anchor="w")
+        # Box A: Process Cache Thread
+        bx1_a = pipe_left
+        bx2_a = bx1_a + sup_w
+        self._draw_card(bx1_a, sup_y1, bx2_a, sup_y2, radius=10, fill=COLOR_CARD, outline=COLOR_PLUM, width=1.5)
+        self.canvas.create_rectangle(bx1_a + 2, sup_y1 + 2, bx2_a - 2, sup_y1 + 18, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(bx1_a + 16, sup_y1 + 30, text="Process Cache Thread", font=(self.font_serif, 16, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
+        self.canvas.create_text(bx1_a + 16, sup_y1 + 54, text="polls psutil.pids() ~100ms", font=(self.font_mono, 13), fill=COLOR_TEXT_MUTED, anchor="w")
 
-        # Box B: Desktop Console
-        bx_b = pipe_left + sup_w + 16
-        self._draw_card(bx_b, sup_y1, pipe_right, sup_y2, radius=8, fill=COLOR_CARD, outline=COLOR_PLUM, width=1)
-        self.canvas.create_rectangle(bx_b + 1, sup_y1 + 1, pipe_right - 1, sup_y1 + 14, fill=COLOR_BLOB_SOFT, outline="")
-        self.canvas.create_text(bx_b + 12, sup_y1 + 20, text="Desktop Console (app.py)", font=(self.font_serif, 12, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
-        self.canvas.create_text(bx_b + 12, sup_y1 + 38, text="config.py: 140 safe procs", font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, anchor="w")
+        # Box B: Desktop Console (app.py)
+        bx1_b = bx1_a + sup_w + sup_gap
+        bx2_b = bx1_b + sup_w
+        self._draw_card(bx1_b, sup_y1, bx2_b, sup_y2, radius=10, fill=COLOR_CARD, outline=COLOR_PLUM, width=1.5)
+        self.canvas.create_rectangle(bx1_b + 2, sup_y1 + 2, bx2_b - 2, sup_y1 + 18, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(bx1_b + 16, sup_y1 + 30, text="Desktop Console (app.py)", font=(self.font_serif, 16, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
+        self.canvas.create_text(bx1_b + 16, sup_y1 + 54, text="window and live telemetry", font=(self.font_mono, 13), fill=COLOR_TEXT_MUTED, anchor="w")
 
-        # 5 Step Boxes
-        flow_y1 = 152
-        flow_y2 = 236
-        box_gap = 10
+        # Box C: Policy (config.py) (Item 1: Shortened to "140 protected processes")
+        bx1_c = bx1_b + sup_w + sup_gap
+        bx2_c = pipe_right
+        self._draw_card(bx1_c, sup_y1, bx2_c, sup_y2, radius=10, fill=COLOR_CARD, outline=COLOR_PLUM, width=1.5)
+        self.canvas.create_rectangle(bx1_c + 2, sup_y1 + 2, bx2_c - 2, sup_y1 + 18, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(bx1_c + 16, sup_y1 + 30, text="Policy (config.py)", font=(self.font_serif, 16, "bold"), fill=COLOR_TEXT_DARK, anchor="w")
+
+        pol_sub_text = "140 protected processes"
+        pol_sub_pt = 13
+        try:
+            p_font = tkfont.Font(family=self.font_mono, size=pol_sub_pt)
+            while p_font.measure(pol_sub_text) > (sup_w - 32) and pol_sub_pt > 10:
+                pol_sub_pt -= 1
+                p_font = tkfont.Font(family=self.font_mono, size=pol_sub_pt)
+        except Exception:
+            pass
+        self.canvas.create_text(bx1_c + 16, sup_y1 + 54, text=pol_sub_text, font=(self.font_mono, pol_sub_pt), fill=COLOR_TEXT_MUTED, anchor="w")
+
+        # Tier 2: Pipeline Step Boxes
+        flow_y1 = 232
+        flow_h = 126
+        flow_y2 = flow_y1 + flow_h
+        box_gap = 12
         step_w = (pipe_w - (4 * box_gap)) / 5.0
 
         step_boxes = [
@@ -1077,52 +1109,166 @@ class PresentationWindow(ctk.CTkToplevel):
             ("5. REPORT", "Forensics", "incident_manager.py", False),
         ]
 
+        step_coords = []
         for s_idx, (tag, b_title, b_file, is_coral) in enumerate(step_boxes):
             bx1 = pipe_left + s_idx * (step_w + box_gap)
             bx2 = bx1 + step_w
+            step_coords.append((bx1, bx2))
+            mid_x = (bx1 + bx2) / 2
             out_col = COLOR_CORAL if is_coral else COLOR_PLUM
 
-            self._draw_card(bx1, flow_y1, bx2, flow_y2, radius=8, fill=COLOR_CARD, outline=out_col, width=2)
-            self.canvas.create_rectangle(bx1 + 2, flow_y1 + 2, bx2 - 2, flow_y1 + 16, fill=COLOR_BLOB_SOFT, outline="")
+            self._draw_card(bx1, flow_y1, bx2, flow_y2, radius=10, fill=COLOR_CARD, outline=out_col, width=2)
+            self.canvas.create_rectangle(bx1 + 2, flow_y1 + 2, bx2 - 2, flow_y1 + 26, fill=COLOR_BLOB_SOFT, outline="")
 
-            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 9, text=tag, font=(self.font_body, 9, "bold"), fill=out_col)
-            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 38, text=b_title, font=(self.font_serif, 11, "bold"), fill=COLOR_TEXT_DARK, justify="center")
-            self.canvas.create_text((bx1 + bx2) / 2, flow_y1 + 64, text=b_file, font=(self.font_mono, 10), fill=COLOR_TEXT_MUTED, justify="center")
+            self.canvas.create_text(mid_x, flow_y1 + 17, text=tag, font=(self.font_body, 15, "bold"), fill=out_col)
+            self.canvas.create_text(mid_x, flow_y1 + 54, text=b_title, font=(self.font_serif, 16, "bold"), fill=COLOR_TEXT_DARK, justify="center")
+            self.canvas.create_text(mid_x, flow_y1 + 94, text=b_file, font=(self.font_mono, 14, "bold"), fill=COLOR_TEXT_MUTED, justify="center")
 
             if s_idx < 4:
                 ay = (flow_y1 + flow_y2) / 2
-                self.canvas.create_line(bx2 + 1, ay, bx2 + box_gap - 1, ay, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+                self.canvas.create_line(bx2 + 1, ay, bx2 + box_gap - 1, ay, fill=COLOR_PLUM, width=2.5, arrow=tk.LAST)
 
-        # Dashed Sandbox Boundary Container below pipeline
-        sand_y1 = 280
-        sand_y2 = h - 20
+        # 4. Inter-Tier Connections (Gap 1: between Tier 1 and Tier 2) (Item 2)
+        mid_a = (bx1_a + bx2_a) / 2
+        mid_c = (bx1_c + bx2_c) / 2
+
+        # (a) Process cache line to Box 3:
+        # Enters Box 3 at left side of card so it never touches centered tag '3. IDENTIFY'
+        b3_in_cache = step_coords[2][0] + 20
+        lbl_cache_x = (mid_a + b3_in_cache) / 2
+        lbl_cache_y = 190
+        cache_font = tkfont.Font(family=self.font_mono, size=12, weight="bold")
+        cache_w = cache_font.measure("process cache") + 16
+        cache_h = 20
+        self.canvas.create_rectangle(
+            lbl_cache_x - cache_w / 2, lbl_cache_y - cache_h / 2,
+            lbl_cache_x + cache_w / 2, lbl_cache_y + cache_h / 2,
+            fill=COLOR_BG, outline=COLOR_BLOB_MID, width=1
+        )
+        self.canvas.create_text(lbl_cache_x, lbl_cache_y, text="process cache", font=(self.font_mono, 12, "bold"), fill=COLOR_PLUM)
+
+        self.canvas.create_line(mid_a, sup_y2, mid_a, 206, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(mid_a, 206, b3_in_cache, 206, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(b3_in_cache, 206, b3_in_cache, flow_y1, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+
+        # (b) Policy line to Box 3 and Box 4:
+        # Enters Box 4 and Box 3 at right side of cards, routes right of label and below it
+        b4_in_pol = step_coords[3][1] - 20
+        b3_in_pol = step_coords[2][1] - 20
+        lbl_pol_x = 760
+        lbl_pol_y = 190
+        pol_font = tkfont.Font(family=self.font_mono, size=12, weight="bold")
+        pol_w = pol_font.measure("policy allowlist") + 16
+        pol_h = 20
+        self.canvas.create_rectangle(
+            lbl_pol_x - pol_w / 2, lbl_pol_y - pol_h / 2,
+            lbl_pol_x + pol_w / 2, lbl_pol_y + pol_h / 2,
+            fill=COLOR_BG, outline=COLOR_BLOB_MID, width=1
+        )
+        self.canvas.create_text(lbl_pol_x, lbl_pol_y, text="policy allowlist", font=(self.font_mono, 12, "bold"), fill=COLOR_PLUM)
+
+        # Line to Box 4: from mid_c + 20 down to y=206, across left to b4_in_pol, down to flow_y1
+        x_pol_exit4 = mid_c + 20
+        self.canvas.create_line(x_pol_exit4, sup_y2, x_pol_exit4, 206, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(x_pol_exit4, 206, b4_in_pol, 206, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(b4_in_pol, 206, b4_in_pol, flow_y1, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+
+        # Line to Box 3: from mid_c - 20 down to y=216, across left to b3_in_pol, down to flow_y1
+        x_pol_exit3 = mid_c - 20
+        self.canvas.create_line(x_pol_exit3, sup_y2, x_pol_exit3, 216, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(x_pol_exit3, 216, b3_in_pol, 216, fill=COLOR_PLUM, width=2)
+        self.canvas.create_line(b3_in_pol, 216, b3_in_pol, flow_y1, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
+
+        # 5. Tier 3: Larger Sandbox Box evenly distributed over full height (Item 4)
+        sand_y1 = 416
+        sand_h = 186
+        sand_y2 = sand_y1 + sand_h
         self.canvas.create_rectangle(pipe_left, sand_y1, pipe_right, sand_y2, fill=COLOR_CARD, outline=COLOR_PLUM, width=2, dash=(6, 4))
 
-        # Bottom label inside sandbox container
+        # Title inside sandbox (placed below sand_y1 so arrows ending at sand_y1 never touch it) (Item 3)
         self.canvas.create_text(
-            pipe_left + 14, sand_y2 - 14,
+            pipe_left + 24, sand_y1 + 24,
             text="Protected Sandbox: test_sandbox (honeytokens & mock user files)",
-            font=(self.font_serif, 11, "bold"),
+            font=(self.font_serif, 16, "bold"),
             fill=COLOR_PLUM,
             anchor="w",
         )
 
-        # Vertical arrows in the gap between flow boxes (y=236) and sandbox (y=280)
-        gap_mid_y = (flow_y2 + sand_y1) / 2
-        b1_mid = pipe_left + (step_w / 2)
-        self.canvas.create_line(b1_mid, flow_y2, b1_mid, sand_y1 + 20, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
-        self.canvas.create_text(b1_mid + 6, gap_mid_y, text="seeds decoys", font=(self.font_mono, 9), fill=COLOR_TEXT_MUTED, anchor="w")
+        # Larger chips inside sandbox (Item 4)
+        chip_y1 = sand_y1 + 56
+        chip_y2 = chip_y1 + 46
+        self._draw_pill(pipe_left + 24, chip_y1, pipe_left + 290, chip_y2, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(pipe_left + 157, (chip_y1 + chip_y2) / 2, text="🍯 Decoy Honeytokens (10)", font=(self.font_body, 15, "bold"), fill=COLOR_PLUM)
 
-        b2_mid = pipe_left + step_w + box_gap + (step_w / 2)
-        self.canvas.create_line(b2_mid, sand_y1 + 20, b2_mid, flow_y2, fill=COLOR_PLUM, width=2, arrow=tk.LAST)
-        self.canvas.create_text(b2_mid + 6, gap_mid_y, text="I/O events", font=(self.font_mono, 9), fill=COLOR_TEXT_MUTED, anchor="w")
+        self._draw_pill(pipe_left + 314, chip_y1, pipe_left + 560, chip_y2, fill=COLOR_BLOB_SOFT, outline="")
+        self.canvas.create_text(pipe_left + 437, (chip_y1 + chip_y2) / 2, text="📄 Mock User Files (5)", font=(self.font_body, 15, "bold"), fill=COLOR_PLUM)
 
-        # Self-healing loop inside sandbox
-        b4_mid = pipe_left + 3 * (step_w + box_gap) + (step_w / 2)
-        loop_y = sand_y1 + 45
-        self.canvas.create_line(b4_mid, flow_y2, b4_mid, loop_y, b1_mid, loop_y, b1_mid, sand_y1 + 20, fill=COLOR_PLUM, width=2, arrow=tk.LAST, dash=(4, 2))
-        self.canvas.create_text((b1_mid + b4_mid) / 2, loop_y - 10, text="self-healing: restore decoy", font=(self.font_mono, 9, "bold"), fill=COLOR_PLUM)
+        # Explanatory subtext inside sandbox
+        self.canvas.create_text(
+            pipe_left + 24, sand_y1 + 142,
+            text="Deception environment: isolated honeytokens trip alerts; real user files are shielded from encryption.",
+            font=(self.font_body, 14),
+            fill=COLOR_TEXT_MUTED,
+            anchor="w",
+        )
 
+        # 6. Arrows "seeds decoys" and "I/O events" (Item 3)
+        # They stop at sandbox top border (sand_y1) and do not touch title
+        b1_mid = (step_coords[0][0] + step_coords[0][1]) / 2
+        b2_mid = (step_coords[1][0] + step_coords[1][1]) / 2
+        gap2_mid_y = (flow_y2 + sand_y1) / 2
+
+        # "seeds decoys" arrow from Box 1 to sandbox top border
+        self.canvas.create_line(b1_mid, flow_y2, b1_mid, sand_y1, fill=COLOR_PLUM, width=2.5, arrow=tk.LAST)
+        lbl_seeds_x = b1_mid + 12
+        lbl_seeds_y = gap2_mid_y
+        seeds_font = tkfont.Font(family=self.font_mono, size=12, weight="bold")
+        seeds_w = seeds_font.measure("seeds decoys") + 12
+        self.canvas.create_rectangle(lbl_seeds_x - 2, lbl_seeds_y - 10, lbl_seeds_x + seeds_w, lbl_seeds_y + 10, fill=COLOR_BG, outline=COLOR_BLOB_MID, width=1)
+        self.canvas.create_text(lbl_seeds_x + 4, lbl_seeds_y, text="seeds decoys", font=(self.font_mono, 12, "bold"), fill=COLOR_TEXT_MUTED, anchor="w")
+
+        # "I/O events" arrow from sandbox top border to Box 2
+        self.canvas.create_line(b2_mid, sand_y1, b2_mid, flow_y2, fill=COLOR_PLUM, width=2.5, arrow=tk.LAST)
+        lbl_io_x = b2_mid + 12
+        lbl_io_y = gap2_mid_y
+        io_font = tkfont.Font(family=self.font_mono, size=12, weight="bold")
+        io_w = io_font.measure("I/O events") + 12
+        self.canvas.create_rectangle(lbl_io_x - 2, lbl_io_y - 10, lbl_io_x + io_w, lbl_io_y + 10, fill=COLOR_BG, outline=COLOR_BLOB_MID, width=1)
+        self.canvas.create_text(lbl_io_x + 4, lbl_io_y, text="I/O events", font=(self.font_mono, 12, "bold"), fill=COLOR_TEXT_MUTED, anchor="w")
+
+        # 7. Self-Healing Loop Routed COMPLETELY OUTSIDE the Sandbox (Item 3)
+        loop_r = pipe_right + 16
+        loop_l = pipe_left - 18
+        loop_top_gap = flow_y2 + 18
+        loop_bottom = sand_y2 + 24
+        b4_mid = (step_coords[3][0] + step_coords[3][1]) / 2
+
+        # Down from CONTAIN into gap, right to loop_r, down right side outside sandbox
+        self.canvas.create_line(b4_mid, flow_y2, b4_mid, loop_top_gap, fill=COLOR_PLUM, width=2, dash=(4, 2))
+        self.canvas.create_line(b4_mid, loop_top_gap, loop_r, loop_top_gap, fill=COLOR_PLUM, width=2, dash=(4, 2))
+        self.canvas.create_line(loop_r, loop_top_gap, loop_r, loop_bottom, fill=COLOR_PLUM, width=2, dash=(4, 2))
+
+        # Bottom horizontal path with label in the gap
+        lbl_heal_x = (pipe_left + pipe_right) / 2
+        lbl_heal_y = loop_bottom
+        heal_font = tkfont.Font(family=self.font_mono, size=12, weight="bold")
+        heal_w = heal_font.measure("self-healing: restore decoy") + 20
+        heal_h = 20
+        self.canvas.create_rectangle(
+            lbl_heal_x - heal_w / 2, lbl_heal_y - heal_h / 2,
+            lbl_heal_x + heal_w / 2, lbl_heal_y + heal_h / 2,
+            fill=COLOR_BG, outline=COLOR_BLOB_MID, width=1
+        )
+        self.canvas.create_text(lbl_heal_x, lbl_heal_y, text="self-healing: restore decoy", font=(self.font_mono, 12, "bold"), fill=COLOR_PLUM)
+
+        self.canvas.create_line(loop_r, loop_bottom, lbl_heal_x + heal_w / 2 + 10, loop_bottom, fill=COLOR_PLUM, width=2, dash=(4, 2))
+        self.canvas.create_line(lbl_heal_x - heal_w / 2 - 10, loop_bottom, loop_l, loop_bottom, fill=COLOR_PLUM, width=2, dash=(4, 2))
+
+        # Up left side outside sandbox, right across gap to Box 1, up into PLANT
+        b1_in_heal = step_coords[0][0] + 20
+        self.canvas.create_line(loop_l, loop_bottom, loop_l, loop_top_gap, fill=COLOR_PLUM, width=2, dash=(4, 2))
+        self.canvas.create_line(loop_l, loop_top_gap, b1_in_heal, loop_top_gap, fill=COLOR_PLUM, width=2, dash=(4, 2))
+        self.canvas.create_line(b1_in_heal, loop_top_gap, b1_in_heal, flow_y2, fill=COLOR_PLUM, width=2, arrow=tk.LAST, dash=(4, 2))
     # ---------------------------------------------------------------------
     # SLIDE 6: NEXT MILESTONES
     # ---------------------------------------------------------------------
