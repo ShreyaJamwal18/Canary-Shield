@@ -145,7 +145,7 @@ def print_status() -> None:
     else:
         print("Service State:        INACTIVE (Not running in background)")
 
-    mode_str = "TEST MODE (Safe Sandbox)" if is_test_mode() else "PRODUCTION MODE (Enterprise)"
+    mode_str = "TEST MODE (Safe Sandbox)" if is_test_mode() else "PRODUCTION MODE"
     print(f"Execution Mode:       {mode_str}")
     print(f"Log File:             {LOG_FILE}")
 

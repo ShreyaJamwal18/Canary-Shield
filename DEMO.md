@@ -36,7 +36,7 @@ python main.py
 ### Expected Output (Terminal 1):
 ```
 ======================================================================
-           CANARY SHIELD — Zero-Day Ransomware Mitigation
+           CANARY SHIELD — Deception-Based Ransomware Mitigation
 ======================================================================
 [Initialization] TARGET SANDBOX PATH: C:\Users\91700\Documents\MDC\test_sandbox
 [Canary Shield] EXECUTION MODE: TEST MODE (CANARY_TEST_MODE=1)

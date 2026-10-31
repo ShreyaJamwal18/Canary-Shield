@@ -1,13 +1,13 @@
-# Canary Shield — Deception-Based Zero-Day Ransomware Mitigation
+# Canary Shield — Deception-Based Ransomware Mitigation
 
 **Engineering Capstone Project**  
-*An active cyber-defense framework that protects endpoints against novel zero-day ransomware using filesystem honeytokens, real-time event telemetry, and rapid process containment.*
+*An active cyber-defense framework that protects endpoints against novel ransomware using filesystem honeytokens, real-time event telemetry, and rapid process containment.*
 
 ---
 
 ## Abstract
 
-Traditional endpoint protection platforms (EPP) and antivirus tools rely primarily on signature-based detection and known threat heuristics. Consequently, novel "zero-day" ransomware campaigns (which employ custom packing, polymorphism, or newly weaponized encryption techniques) readily bypass perimeter defenses and begin encrypting user assets unhindered.
+Traditional endpoint protection platforms (EPP) and antivirus tools rely primarily on signature-based detection and known threat heuristics. Consequently, novel ransomware campaigns (which employ custom packing, polymorphism, or newly weaponized encryption techniques) readily bypass perimeter defenses and begin encrypting user assets unhindered.
 
 **Canary Shield** counters this asymmetry using **active deception**:
 1. **Decoy Placement**: It silently plants realistic decoy files ("canaries" or honeytokens) disguised as high-value corporate documents (financial audits, payrolls, password vaults) scattered across monitored storage directories.

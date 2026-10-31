@@ -1,8 +1,8 @@
 """
-Canary Shield — Enterprise Containment Module.
+Canary Shield — Containment Module.
 
 Safely and aggressively neutralizes identified ransomware processes via psutil.
-Equipped with real-world enterprise containment capabilities:
+Equipped with real-world containment capabilities:
 1. Process Suspension (proc.suspend()): Immediately arrests all worker
    threads in the target process before further encryption I/O can be queued.
 2. Full Process Tree Neutralization (proc.children(recursive=True)): Terminates all
@@ -102,7 +102,7 @@ def kill_process(
     t_attr_end: Optional[float] = None,
 ) -> bool:
     """
-    Terminate the offending process with the given PID using enterprise containment.
+    Terminate the offending process with the given PID.
     
     Hard Rule 3 (Fail-Safe):
     On ANY uncertainty, ambiguity, allowlist match, or exception,

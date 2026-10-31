@@ -1,9 +1,9 @@
 """
-Canary Shield — Enterprise Main Entry Point & CLI.
+Canary Shield — Main Entry Point & CLI.
 
-Central command center for deception-based zero-day ransomware mitigation:
+Central command center for deception-based ransomware mitigation:
 - Foreground and headless background daemon monitoring.
-- Multi-directory protection across enterprise endpoints.
+- Multi-directory protection across endpoints.
 - Real-time VSS anti-recovery guard, malware quarantine, and desktop alerts.
 - Enforces Hard Rule 1 (printing sandbox path) and Hard Rule 2 (allowlist status).
 """
@@ -32,7 +32,7 @@ from incident_manager import list_incidents
 def run_monitor_loop(block: bool = True) -> None:
     """Executes the core decoy deployment and real-time monitoring loop."""
     print("=" * 70)
-    print("           CANARY SHIELD — Zero-Day Ransomware Mitigation")
+    print("           CANARY SHIELD — Deception-Based Ransomware Mitigation")
     print("=" * 70)
 
     # HARD RULE 1: Explicitly print the full target sandbox directory path
@@ -43,7 +43,7 @@ def run_monitor_loop(block: bool = True) -> None:
         print("[Canary Shield] EXECUTION MODE: TEST MODE (CANARY_TEST_MODE=1)")
         print("[Canary Shield] Note: python.exe is permitted for attack simulation.")
     else:
-        print("[Canary Shield] EXECUTION MODE: PRODUCTION MODE (Enterprise Endpoint Protection)")
+        print("[Canary Shield] EXECUTION MODE: PRODUCTION MODE (Endpoint Protection)")
         print("[Canary Shield] Note: All system processes and python runtimes are strictly protected.")
 
     active_allowlist = get_active_allowlist()
@@ -90,7 +90,7 @@ def list_forensic_incidents() -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Canary Shield — Enterprise Zero-Day Ransomware Mitigation System",
+        description="Canary Shield — Deception-Based Ransomware Mitigation System",
         epilog="Run without arguments to launch real-time monitoring directly."
     )
     subparsers = parser.add_subparsers(dest="command")

@@ -1,5 +1,5 @@
 """
-Canary Shield — Enterprise Incident & Quarantine Manager.
+Canary Shield — Incident & Quarantine Manager.
 
 Handles real-world digital forensics and incident response:
 1. Cryptographic hashing (SHA-256) of offending malware executables.
@@ -18,6 +18,7 @@ from typing import Dict, Any, List, Optional
 import psutil
 
 from config import INCIDENTS_DIR, QUARANTINE_DIR, BASE_DIR
+from decoy import load_decoy_manifest
 
 logger = logging.getLogger("canary_shield.incident_manager")
 
@@ -95,7 +96,7 @@ def quarantine_binary(proc_exe: Optional[str], pid: int, proc_name: str, cmdline
 
 
 def generate_html_report(incident: Dict[str, Any], output_path: str) -> None:
-    """Generate an enterprise-grade HTML forensic incident report."""
+    """Generate an HTML forensic incident report."""
     pid = incident.get("pid", "Unknown")
     proc_name = incident.get("proc_name", "Unknown")
     timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime(incident.get("timestamp", time.time())))
@@ -146,7 +147,7 @@ def generate_html_report(incident: Dict[str, Any], output_path: str) -> None:
         </div>
         <div>
             <span class="badge badge-contained">Threat Neutralized</span>
-            <span class="badge badge-critical">Zero-Day Defense</span>
+            <span class="badge badge-critical">Deception Defense</span>
         </div>
     </div>
 
@@ -190,7 +191,7 @@ def generate_html_report(incident: Dict[str, Any], output_path: str) -> None:
             <strong>2. Process Correlated:</strong> Event mapped to PID <code>{pid}</code> ({proc_name}) via <code>{method}</code> in {latency:.2f}ms.
         </div>
         <div class="timeline-item">
-            <strong>3. Instant Thread Freeze:</strong> <code>proc.suspend()</code> halted all execution threads before next I/O burst.
+            <strong>3. Thread Freeze:</strong> <code>proc.suspend()</code> halted all execution threads before next I/O burst.
         </div>
         <div class="timeline-item">
             <strong>4. Process Tree Termination:</strong> Parent PID <code>{pid}</code> and child processes terminated via <code>TerminateProcess</code>.
@@ -207,7 +208,7 @@ def generate_html_report(incident: Dict[str, Any], output_path: str) -> None:
     </div>
 
     <div class="footer">
-        Canary Shield Autonomous Zero-Day Ransomware Mitigation System • Enterprise Forensics
+        Canary Shield Deception-Based Ransomware Defense
     </div>
 </div>
 </body>
@@ -219,6 +220,38 @@ def generate_html_report(incident: Dict[str, Any], output_path: str) -> None:
         logger.info("Generated HTML Forensic Incident Report: %s", output_path)
     except Exception as exc:
         logger.error("Failed to generate HTML report: %s", exc)
+
+
+def _count_surviving_user_files(target_path: str) -> List[str]:
+    """
+    Count genuine user files that survive in the directory containing target_path.
+    Excludes: decoy files listed in decoy_manifest.json and their .locked variants.
+    Returns sorted list of surviving non-decoy filenames.
+    """
+    try:
+        directory = os.path.dirname(os.path.normcase(os.path.normpath(target_path)))
+        if not os.path.isdir(directory):
+            # target_path may itself be the directory
+            directory = os.path.normcase(os.path.normpath(target_path))
+        if not os.path.isdir(directory):
+            return []
+        decoy_paths = set(load_decoy_manifest())
+        # Also build set of basenames for .locked variant matching
+        decoy_bases = {os.path.basename(p) for p in decoy_paths}
+        decoy_locked = {b + ".locked" for b in decoy_bases}
+        surviving = []
+        for fname in os.listdir(directory):
+            fpath = os.path.normcase(os.path.normpath(os.path.join(directory, fname)))
+            if fpath in decoy_paths:
+                continue
+            if fname in decoy_locked:
+                continue
+            if os.path.isfile(fpath):
+                surviving.append(fname)
+        return sorted(surviving)
+    except Exception as exc:
+        logger.warning("Could not count surviving user files: %s", exc)
+        return []
 
 
 def record_incident(
@@ -239,6 +272,9 @@ def record_incident(
     """
     ts = time.time()
     incident_id = f"INC-{int(ts)}-{pid}"
+    # Compute surviving user files at report time if not provided by caller
+    if surviving_user_files is None:
+        surviving_user_files = _count_surviving_user_files(target_path)
 
     # Step 1: Quarantine malware binary or attacking script
     quarantine_info = quarantine_binary(proc_exe, pid, proc_name, cmdline=cmdline)

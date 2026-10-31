@@ -1,5 +1,5 @@
 """
-Canary Shield — Enterprise Desktop Application (EDR / XDR Console).
+Canary Shield — Desktop Application.
 
 Modern desktop GUI built with CustomTkinter:
 - Real-time Shield Management (Arm / Disarm / Status)
@@ -38,7 +38,7 @@ def resource_path(relative_path: str) -> str:
 
 # Set explicit Windows AppUserModelID so taskbar displays the custom application icon
 try:
-    myappid = "canaryshield.edr.desktop.1.0"
+    myappid = "canaryshield.desktop.1.0"
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 except Exception:
     pass
@@ -338,7 +338,7 @@ class CanaryShieldApp(ctk.CTk):
 
         self.dash_title = ctk.CTkLabel(
             hero_text_col,
-            text="Autonomous Zero-Day Ransomware Defense",
+            text="Deception-Based Ransomware Defense",
             font=ctk.CTkFont(family="Segoe UI", size=22, weight="bold"),
             text_color=COLOR_TEXT_MAIN,
         )
@@ -934,7 +934,7 @@ class CanaryShieldApp(ctk.CTk):
             corner_radius=10,
         )
         self.sim_console.grid(row=3, column=0, sticky="nsew")
-        self.sim_console.insert("end", "[Simulator Ready] Click 'Launch Attack Simulation' to test live zero-day interception.\n")
+        self.sim_console.insert("end", "[Simulator Ready] Click 'Launch Attack Simulation' to test live ransomware interception.\n")
 
         return frame
 
@@ -1016,7 +1016,7 @@ class CanaryShieldApp(ctk.CTk):
         if code != 0:
             self.sim_console.insert("end", f"\n>>> SUCCESS: Attacker Process Intercepted & Terminated! (Exit code: {code}) <<<\n")
             self.dash_threat_detail.configure(
-                text="Threat Contained! Zero-day traversal neutralized.\nSimulator process killed before genuine user files were encrypted.",
+                text="Threat Contained! Ransomware traversal neutralized.\nSimulator process killed before genuine user files were encrypted.",
                 text_color=COLOR_SUCCESS,
             )
         else:
@@ -1036,7 +1036,7 @@ class CanaryShieldApp(ctk.CTk):
 
         title = ctk.CTkLabel(
             frame,
-            text="Canary Shield Enterprise Configuration",
+            text="Canary Shield Configuration",
             font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
             text_color=COLOR_TEXT_MAIN,
         )
@@ -1077,7 +1077,7 @@ class CanaryShieldApp(ctk.CTk):
 
         self.sw_freeze = ctk.CTkSwitch(
             settings_card,
-            text="Instant Thread Freeze — Suspend attacker threads prior to termination",
+            text="Thread Freeze — Suspend attacker threads prior to termination",
             font=ctk.CTkFont(size=13),
         )
         if cfg.get("instant_thread_freeze", True):
@@ -1220,7 +1220,7 @@ class CanaryShieldApp(ctk.CTk):
         threading.Thread(target=_worker, daemon=True).start()
 
     def _on_shield_armed(self):
-        self.dash_status_badge.configure(text="● ACTIVE SHIELD PROTECTING — ENDPOINTS ARMED", text_color=COLOR_SUCCESS)
+        self.dash_status_badge.configure(text="● ACTIVE SHIELD PROTECTING — SANDBOX FOLDER ARMED", text_color=COLOR_SUCCESS)
         self.dash_arm_button.configure(text="DISARM SHIELD", fg_color=COLOR_DANGER, hover_color="#dc2626")
         self.sidebar_shield_badge.configure(text="● SHIELD ARMED", text_color=COLOR_SUCCESS)
         self.metric_decoys["value_label"].configure(text=f"{len(self.active_canaries)} Active")

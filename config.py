@@ -3,7 +3,7 @@ Canary Shield — Configuration Module.
 
 Central configuration for Canary Shield deception-based ransomware mitigation.
 Enforces Hard Rule 1 (strict sandbox targeting in test mode) and Hard Rule 2 (frozen production allowlist).
-Equipped with real-world enterprise capabilities:
+Equipped with real-world capabilities:
 - Dynamic JSON configuration loading (canary_shield_config.json).
 - Multi-directory production protection (Documents, Desktop, Downloads, custom shares).
 - Malware quarantine and forensic incident directory management.
@@ -27,7 +27,7 @@ else:
 TEST_SANDBOX_DIR = os.path.join(BASE_DIR, "test_sandbox")
 os.makedirs(TEST_SANDBOX_DIR, exist_ok=True)
 
-# Enterprise Forensic & Quarantine Directories
+# Forensic & Quarantine Directories
 QUARANTINE_DIR = os.path.join(BASE_DIR, "quarantine")
 INCIDENTS_DIR = os.path.join(BASE_DIR, "incidents")
 os.makedirs(QUARANTINE_DIR, exist_ok=True)

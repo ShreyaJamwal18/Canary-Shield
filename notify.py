@@ -1,7 +1,7 @@
 """
 Canary Shield — Real-Time Alerting & Notification Module.
 
-Dispatches instant desktop notifications when zero-day ransomware is intercepted:
+Dispatches desktop notifications when ransomware is intercepted:
 - Native Windows Toast Notification (Action Center).
 - Fallback balloon or non-blocking system alert dialog.
 - Asynchronous non-blocking dispatch so alerting never slows containment down.
@@ -32,7 +32,7 @@ def _send_windows_toast_powershell(title: str, message: str) -> None:
     $textNodes.Item(0).AppendChild($template.CreateTextNode("{safe_title}")) > $null
     $textNodes.Item(1).AppendChild($template.CreateTextNode("{safe_message}")) > $null
     $toast = [Windows.UI.Notifications.ToastNotification]::new($template)
-    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Canary Shield EDR").Show($toast)
+    [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("Canary Shield").Show($toast)
     """
 
     try:

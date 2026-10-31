@@ -5,7 +5,7 @@ Uses watchdog to hook OS-level file system events (ReadDirectoryChangesW on Wind
 Filters incoming events so ONLY modifications, renames, or deletions of
 canary decoy files trigger process attribution and containment.
 
-Equipped with real-world enterprise capabilities:
+Equipped with real-world capabilities:
 - Layered VSS Anti-Recovery Guard (monitors destructive backup wiping).
 - Self-Healing Tripwires: Automatically restores tripped decoys.
 - Log file rotation (RotatingFileHandler) to protect disk health.
