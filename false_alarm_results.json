@@ -1,0 +1,807 @@
+[
+  {
+    "activity": "a. robocopy /E (read-only copy)",
+    "run": 1,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "a. robocopy /E (read-only copy)",
+    "run": 2,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "a. robocopy /E (read-only copy)",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "b. robocopy /M (reset archive bit)",
+    "run": 1,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "b. robocopy /M (reset archive bit)",
+    "run": 2,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "b. robocopy /M (reset archive bit)",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "c. Compress-Archive (zip)",
+    "run": 1,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "c. Compress-Archive (zip)",
+    "run": 2,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "c. Compress-Archive (zip)",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "d. Get-FileHash + Python read",
+    "run": 1,
+    "tripwire_fired": true,
+    "event_count": 3,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994215.3104072
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994221.9481726
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994222.3238347
+      }
+    ],
+    "containment_raw": []
+  },
+  {
+    "activity": "d. Get-FileHash + Python read",
+    "run": 2,
+    "tripwire_fired": true,
+    "event_count": 6,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994223.2227893
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994223.6291513
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994224.0071025
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994224.3891578
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994225.026684
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994225.3990734
+      }
+    ],
+    "containment_raw": []
+  },
+  {
+    "activity": "d. Get-FileHash + Python read",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "e. Windows Defender custom scan",
+    "run": 1,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "e. Windows Defender custom scan",
+    "run": 2,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "e. Windows Defender custom scan",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "f. Touch timestamps + attrib",
+    "run": 1,
+    "tripwire_fired": true,
+    "event_count": 10,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994259.285951
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994259.495534
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994259.900784
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994260.2577221
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_master_passwords_vault.txt",
+        "timestamp": 1794994260.627991
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994260.9782965
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994261.3615181
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994261.7378001
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994262.1151552
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994262.472195
+      }
+    ],
+    "containment_raw": []
+  },
+  {
+    "activity": "f. Touch timestamps + attrib",
+    "run": 2,
+    "tripwire_fired": true,
+    "event_count": 10,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994263.5002923
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994263.6773446
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994264.0424228
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994264.3947806
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_master_passwords_vault.txt",
+        "timestamp": 1794994264.7529073
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994265.117454
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994265.4700015
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994265.8275542
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994266.2061481
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994266.580269
+      }
+    ],
+    "containment_raw": []
+  },
+  {
+    "activity": "f. Touch timestamps + attrib",
+    "run": 3,
+    "tripwire_fired": true,
+    "event_count": 10,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994267.485471
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994267.6999874
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994267.885481
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994268.3406603
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_master_passwords_vault.txt",
+        "timestamp": 1794994268.6946883
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994269.061418
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994269.4259834
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994269.7922227
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994270.1625974
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994270.519268
+      }
+    ],
+    "containment_raw": []
+  },
+  {
+    "activity": "g. Copy-Item -Recurse",
+    "run": 1,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "g. Copy-Item -Recurse",
+    "run": 2,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "g. Copy-Item -Recurse",
+    "run": 3,
+    "tripwire_fired": false,
+    "event_count": 0,
+    "event_types": [],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [],
+    "containment_raw": []
+  },
+  {
+    "activity": "h. CONTROL: simulate_attack.py",
+    "run": 1,
+    "tripwire_fired": true,
+    "event_count": 10,
+    "event_types": [
+      "MODIFIED"
+    ],
+    "attributed_processes": [
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "direct_handle",
+        "confidence": "HIGH"
+      },
+      {
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "method": "directory_heuristic",
+        "confidence": "MEDIUM"
+      }
+    ],
+    "would_containment_act": true,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994284.604281
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994284.9989645
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994285.3894973
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_master_passwords_vault.txt",
+        "timestamp": 1794994285.773341
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994286.1598458
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994286.5500727
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994286.9330122
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994287.319197
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994289.843357
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994290.372127
+      }
+    ],
+    "containment_raw": [
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "latency_ms": 145.96,
+        "timestamp": 1794994284.7502413
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "latency_ms": 150.78,
+        "timestamp": 1794994285.149746
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "latency_ms": 176.88,
+        "timestamp": 1794994285.566382
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_master_passwords_vault.txt",
+        "latency_ms": 198.91,
+        "timestamp": 1794994285.9722471
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "latency_ms": 137.19,
+        "timestamp": 1794994286.2970362
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "latency_ms": 219.14,
+        "timestamp": 1794994286.7692108
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "latency_ms": 200.02,
+        "timestamp": 1794994287.1352613
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "HIGH",
+        "method": "direct_handle",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "latency_ms": 163.86,
+        "timestamp": 1794994287.4845757
+      },
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 14596,
+        "proc_name": "python.exe",
+        "confidence": "MEDIUM",
+        "method": "directory_heuristic",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "latency_ms": 516.23,
+        "timestamp": 1794994290.367699
+      }
+    ]
+  },
+  {
+    "activity": "h. CONTROL: simulate_attack.py",
+    "run": 2,
+    "tripwire_fired": true,
+    "event_count": 11,
+    "event_types": [
+      "MODIFIED",
+      "DELETED",
+      "RENAMED"
+    ],
+    "attributed_processes": [
+      {
+        "pid": 20880,
+        "proc_name": "python.exe",
+        "method": "directory_heuristic",
+        "confidence": "MEDIUM"
+      }
+    ],
+    "would_containment_act": true,
+    "events_raw": [
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994296.537367
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994298.8144777
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_employee_payroll_records.docx",
+        "timestamp": 1794994299.4473429
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994299.8541934
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994301.0090818
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994302.1887891
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_confidential_board_minutes.txt",
+        "timestamp": 1794994303.4234107
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994303.8907316
+      },
+      {
+        "event_type": "DELETED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994304.285192
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994305.4059494
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_customer_ssn_archive.xlsx",
+        "timestamp": 1794994305.7931268
+      }
+    ],
+    "containment_raw": [
+      {
+        "action": "WOULD_TERMINATE",
+        "pid": 20880,
+        "proc_name": "python.exe",
+        "confidence": "MEDIUM",
+        "method": "directory_heuristic",
+        "target_path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "latency_ms": 975.75,
+        "timestamp": 1794994297.6433034
+      }
+    ]
+  },
+  {
+    "activity": "h. CONTROL: simulate_attack.py",
+    "run": 3,
+    "tripwire_fired": true,
+    "event_count": 10,
+    "event_types": [
+      "MODIFIED",
+      "RENAMED"
+    ],
+    "attributed_processes": [],
+    "would_containment_act": false,
+    "events_raw": [
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_confidential_q4_financial_audit.docx",
+        "timestamp": 1794994315.805835
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994318.2051795
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\!_passwords_customer_ssn_archive.pdf",
+        "timestamp": 1794994319.815103
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994321.4881437
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_confidential_board_minutes.jpg",
+        "timestamp": 1794994322.258109
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994322.7505364
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\00_audit_corporate_strategy_2026.docx",
+        "timestamp": 1794994323.7057323
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994324.5066433
+      },
+      {
+        "event_type": "RENAMED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_merger_acquisition_brief.pdf",
+        "timestamp": 1794994325.420343
+      },
+      {
+        "event_type": "MODIFIED",
+        "path": "c:\\users\\91700\\documents\\mdc\\test_sandbox\\~$q4_financial_q4_financial_audit.docx",
+        "timestamp": 1794994327.074525
+      }
+    ],
+    "containment_raw": []
+  }
+]
