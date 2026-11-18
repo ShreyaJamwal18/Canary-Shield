@@ -1190,6 +1190,21 @@ class CanaryShieldApp(ctk.CTk):
         if self.is_armed:
             return
 
+        # If the Windows service is already running, don't start a second engine
+        try:
+            from canary_service import is_service_running
+            if is_service_running():
+                messagebox.showinfo(
+                    "Service Active",
+                    "The CanaryShield service is already protecting this folder.\n\n"
+                    "Use the Forensics Vault to view incidents, or stop the service\n"
+                    "(Administrator PowerShell: Stop-Service CanaryShield) to use\n"
+                    "the console engine instead.",
+                )
+                return
+        except Exception:
+            pass  # canary_service.py not present or pywin32 not installed — proceed normally
+
         if not is_test_mode():
             watched = get_watched_directories()
             dir_list = "\n".join([f"  • {d}" for d in watched])
